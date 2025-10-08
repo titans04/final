@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}My Feedback{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-blue: #4B68A5;
+        --light-blue: #d6ecff;
+        --white: #ffffff;
+        --light-gray: #f8f9fa;
+        --text-gray: #555555;
+        --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        --border-radius: 12px;
+    }
+
+    body {
+        background: var(--light-gray);
+    }
+
+    .container {
+        max-width: 900px;
+        padding-top: 3rem;
+        padding-bottom: 5rem;
+    }
+
+    .feedback-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        color: var(--primary-blue);
+        font-weight: 700;
+        font-size: 2rem;
+    }
+
+    .feedback-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .feedback-card {
+        background: var(--white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        padding: 1.5rem 2rem;
+        /* Highlight border to show it's an important message */
+        border-left: 5px solid var(--primary-blue); 
+        transition: all 0.3s ease;
+    }
+
+    .feedback-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .feedback-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px dashed var(--light-blue);
+        font-size: 0.9rem;
+        color: var(--text-gray);
+    }
+
+    .feedback-staff {
+        font-weight: 600;
+        color: var(--primary-blue);
+    }
+
+    .feedback-date {
+        font-style: italic;
+    }
+
+    .feedback-content h5 {
+        font-size: 1.1rem;
+        color: var(--primary-blue);
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .feedback-text {
+        color: #333;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+        border-left: 3px solid #f0f0f0;
+        padding-left: 10px;
+        /* Ensures line breaks in the text are respected */
+        white-space: pre-wrap; 
+    }
+
+    .progress-notes {
+        background: var(--light-blue);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        font-size: 0.95rem;
+        white-space: pre-wrap;
+    }
+    
+    .progress-notes strong {
+        color: var(--primary-blue);
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: var(--white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--light-blue);
+    }
+
+    /* Back Button */
+    .back-btn {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        background: var(--primary-blue);
+        color: var(--white);
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+        box-shadow: var(--shadow);
+        z-index: 1000;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .back-btn:hover {
+        background: #3a5588;
+        color: var(--white);
+        transform: translateY(-3px);
+    }
+    
+    @media (max-width: 768px) {
+        .back-btn {
+            bottom: 20px;
+            left: 20px;
+            padding: 0.8rem 1.5rem;
+            font-size: 0.9rem;
+        }
+        .feedback-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+    }
+</style>
+
+<div class="container">
+    <h2 class="feedback-header">Received Support Feedback</h2>
+
+    {% if feedback_list %}
+        <div class="feedback-list">
+            {% for feedback in feedback_list %}
+                <div class="feedback-card">
+                    <div class="feedback-meta">
+                        <span class="feedback-staff">
+                            From: {{ feedback.staff.name }} {{ feedback.staff.surname }}
+                        </span>
+                        <span class="feedback-date">
+                            Date: {{ feedback.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+                        </span>
+                    </div>
+
+                    <div class="feedback-content">
+                        <h5>Feedback/Guidance</h5>
+                        <div class="feedback-text">{{ feedback.feedback_text }}</div>
+                        
+                        {% if feedback.progress_notes %}
+                            <div class="progress-notes">
+                                <strong>Staff Notes on Your Progress:</strong>
+                                {{ feedback.progress_notes }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h4>No Feedback Yet</h4>
+            <p>Your support staff haven't sent any structured feedback yet.</p>
+            <p>If you are not yet assigned a staff member, your feedback will appear once an assignment is complete.</p>
+            <a href="{{ url_for('main.student_dashboard') }}" class="btn btn-primary mt-3" style="background-color: var(--primary-blue); border-color: var(--primary-blue);">Go to Dashboard</a>
+        </div>
+    {% endif %}
+</div>
+
+<a href="{{ url_for('main.student_dashboard') }}" class="back-btn">
+    ← Back to Dashboard
+</a>
+{% endblock %}

@@ -9,6 +9,7 @@ from sqlalchemy import func
 from flask_mail import Message
 from flask_login import current_user
 from .extensions import mail
+import json
 
 
 # For generating fallback shape images
@@ -20,7 +21,7 @@ except ImportError:
 
 # Configure Gemini
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.0-pro")
+model = genai.GenerativeModel("gemini-2.5-flash-lite")
 
 
 # IMAGE GENERATION (AI + FALLBACK)
@@ -148,6 +149,8 @@ def get_next_question(part, difficulty="easy", q_num=1):
     max_retries = 3
     retry_count = 0
     
+    print(f"🔍 Generating question: {part}/{difficulty}/Q{q_num}")
+    
     while retry_count < max_retries:
         try:
             if part == "numbers":
@@ -185,7 +188,8 @@ def get_next_question(part, difficulty="easy", q_num=1):
                 Shape: {chosen_shape}
                 """
             else:
-                return {"error": "Invalid test part"}
+                print(f"❌ Invalid test part: {part}")
+                return get_fallback_question(part, difficulty, q_num)
 
             response = model.generate_content(
                 prompt,
@@ -202,6 +206,7 @@ def get_next_question(part, difficulty="easy", q_num=1):
             result = parse_question_response(text, part)
             
             if result and "error" not in result:
+                print(f"✅ AI generated question successfully")
                 if part == "shapes" and "Shape:" in text:
                     shape_line = [line for line in text.split('\n') if line.startswith('Shape:')]
                     if shape_line:
@@ -212,12 +217,14 @@ def get_next_question(part, difficulty="easy", q_num=1):
                             result["shape_type"] = shape_type
                 return result
             else:
+                print(f"⚠️ Parse failed, retry {retry_count + 1}/{max_retries}")
                 retry_count += 1
                 
         except Exception as e:
-            print(f"Attempt {retry_count + 1} failed: {e}")
+            print(f"❌ Attempt {retry_count + 1} failed: {e}")
             retry_count += 1
     
+    print(f"⚠️ All AI attempts failed, using fallback")
     return get_fallback_question(part, difficulty, q_num)
 
 
@@ -257,45 +264,108 @@ def parse_question_response(text, part):
 
 
 def get_fallback_question(part, difficulty, q_num):
+    """Enhanced fallback with complete question sets"""
     fallbacks = {
         "numbers": {
             "easy": {
                 1: {"question": "What is 3 + 4?", "answer": "B", "options": {"A": "6", "B": "7", "C": "8", "D": "9"}},
                 2: {"question": "What is 12 - 5?", "answer": "A", "options": {"A": "7", "B": "8", "C": "6", "D": "9"}},
+                3: {"question": "What is 5 + 3?", "answer": "C", "options": {"A": "7", "B": "9", "C": "8", "D": "10"}},
+                4: {"question": "What is 9 - 4?", "answer": "D", "options": {"A": "4", "B": "6", "C": "4", "D": "5"}},
+                5: {"question": "What is 6 + 2?", "answer": "A", "options": {"A": "8", "B": "7", "C": "9", "D": "10"}},
+            },
+            "medium": {
+                1: {"question": "What is 15 + 27?", "answer": "B", "options": {"A": "41", "B": "42", "C": "43", "D": "44"}},
+                2: {"question": "What is 56 - 29?", "answer": "C", "options": {"A": "25", "B": "26", "C": "27", "D": "28"}},
+                3: {"question": "What is 8 × 7?", "answer": "D", "options": {"A": "54", "B": "55", "C": "57", "D": "56"}},
+                4: {"question": "What is 48 ÷ 6?", "answer": "A", "options": {"A": "8", "B": "7", "C": "9", "D": "6"}},
+                5: {"question": "What is 25 + 36?", "answer": "B", "options": {"A": "60", "B": "61", "C": "62", "D": "59"}},
+            },
+            "hard": {
+                1: {"question": "What is 145 + 278?", "answer": "C", "options": {"A": "421", "B": "422", "C": "423", "D": "424"}},
+                2: {"question": "What is 12 × 15?", "answer": "A", "options": {"A": "180", "B": "175", "C": "185", "D": "190"}},
+                3: {"question": "What is 256 ÷ 8?", "answer": "D", "options": {"A": "30", "B": "31", "C": "33", "D": "32"}},
+                4: {"question": "What is 456 - 189?", "answer": "B", "options": {"A": "266", "B": "267", "C": "268", "D": "269"}},
+                5: {"question": "What is 25% of 200?", "answer": "C", "options": {"A": "45", "B": "40", "C": "50", "D": "55"}},
             }
         },
         "logic": {
             "easy": {
                 1: {"question": "What comes next in this pattern: 2, 4, 6, 8, ?", "answer": "10"},
+                2: {"question": "If all cats are animals, and Tom is a cat, what is Tom?", "answer": "animal"},
+                3: {"question": "Complete the sequence: A, B, C, D, ?", "answer": "E"},
+                4: {"question": "What number is missing: 5, 10, 15, ?, 25", "answer": "20"},
+                5: {"question": "If red comes before blue, and blue comes before green, what comes first?", "answer": "red"},
+            },
+            "medium": {
+                1: {"question": "What comes next: 3, 6, 12, 24, ?", "answer": "48"},
+                2: {"question": "If some flowers are roses, and all roses are plants, are some flowers plants?", "answer": "yes"},
+                3: {"question": "Complete: 1, 4, 9, 16, 25, ?", "answer": "36"},
+                4: {"question": "What is the next letter: B, D, F, H, ?", "answer": "J"},
+                5: {"question": "If A=1, B=2, C=3, what is D+E?", "answer": "9"},
+            },
+            "hard": {
+                1: {"question": "What comes next: 2, 6, 12, 20, 30, ?", "answer": "42"},
+                2: {"question": "If all A are B, and no B are C, can any A be C?", "answer": "no"},
+                3: {"question": "Complete: 1, 1, 2, 3, 5, 8, ?", "answer": "13"},
+                4: {"question": "What comes next: Z, Y, X, W, V, ?", "answer": "U"},
+                5: {"question": "If today is Monday, what day was it 100 days ago?", "answer": "Saturday"},
             }
         },
         "shapes": {
             "easy": {
                 1: {"question": "How many sides does a triangle have?", "answer": "3", "shape_type": "triangle"},
+                2: {"question": "How many sides does a square have?", "answer": "4", "shape_type": "square"},
+                3: {"question": "How many corners does a rectangle have?", "answer": "4", "shape_type": "rectangle"},
+                4: {"question": "Is a circle round or square?", "answer": "round", "shape_type": "circle"},
+                5: {"question": "How many sides does a circle have?", "answer": "0", "shape_type": "circle"},
+            },
+            "medium": {
+                1: {"question": "What is the area of a square with side 5?", "answer": "25", "shape_type": "square"},
+                2: {"question": "If a rectangle is 6 units long and 4 units wide, what is its perimeter?", "answer": "20", "shape_type": "rectangle"},
+                3: {"question": "How many degrees are in a triangle?", "answer": "180", "shape_type": "triangle"},
+                4: {"question": "What is the diameter of a circle with radius 5?", "answer": "10", "shape_type": "circle"},
+                5: {"question": "If each angle of a square is equal, how many degrees is each angle?", "answer": "90", "shape_type": "square"},
+            },
+            "hard": {
+                1: {"question": "What is the area of a triangle with base 8 and height 6?", "answer": "24", "shape_type": "triangle"},
+                2: {"question": "What is the circumference of a circle with radius 7? (Use π ≈ 3.14)", "answer": "43.96", "shape_type": "circle"},
+                3: {"question": "If a rectangle has area 48 and length 8, what is its width?", "answer": "6", "shape_type": "rectangle"},
+                4: {"question": "What is the area of a square with diagonal 10√2?", "answer": "100", "shape_type": "square"},
+                5: {"question": "How many lines of symmetry does a regular triangle have?", "answer": "3", "shape_type": "triangle"},
             }
         }
     }
 
     try:
         fallback = fallbacks[part][difficulty][q_num]
+        
+        # Add shape image for shapes questions
         if part == "shapes" and "shape_type" in fallback:
             shape_image = generate_shape_image(fallback["shape_type"], {})
             if shape_image:
                 fallback["shape_image"] = shape_image
+        
         return fallback
+        
     except KeyError:
-        # If no specific fallback, try to find any for the part and difficulty
-        if part in fallbacks and difficulty in fallbacks[part]:
-            # Return the first available question
-            available_q = list(fallbacks[part][difficulty].keys())
-            if available_q:
-                fallback = fallbacks[part][difficulty][available_q[0]]
-                if part == "shapes" and "shape_type" in fallback:
-                    shape_image = generate_shape_image(fallback["shape_type"], {})
-                    if shape_image:
-                        fallback["shape_image"] = shape_image
-                return fallback
-        return {"error": "No fallback question available"}
+        # Ultimate fallback - return a generic question based on part
+        print(f"⚠️ No fallback for {part}/{difficulty}/Q{q_num}, using generic")
+        
+        generic_fallbacks = {
+            "numbers": {"question": "What is 2 + 2?", "answer": "D", "options": {"A": "3", "B": "5", "C": "6", "D": "4"}},
+            "logic": {"question": "What comes after 1, 2, 3?", "answer": "4"},
+            "shapes": {"question": "How many sides does a square have?", "answer": "4", "shape_type": "square"}
+        }
+        
+        fallback = generic_fallbacks.get(part, {"question": "Default question", "answer": "1"})
+        
+        if part == "shapes":
+            shape_image = generate_shape_image("square", {})
+            if shape_image:
+                fallback["shape_image"] = shape_image
+        
+        return fallback
 
 
 
@@ -389,20 +459,22 @@ def assign_student_to_staff(student):
     return None
 
 
-#email function to send student referral details to departments
-def send_department_email(student, department, referral=None):
+# app/services.py (or where send_department_email is defined)
+
+import json
+from flask_mail import Message
+# Ensure 'mail' and other necessary objects are imported/available in this file's scope
+
+def send_department_email(student, department, referral, referrer_name):
     """
-    Send an email to the department with all details of the student referral:
-    - Basic info
-    - Survey results
-    - Test results
-    - Exercises completed
+    Send an email to the department with all details of the student referral.
+    (Updated to handle student.survey as a single object)
     """
     # Map department to email addresses
     department_emails = {
-        "Finance": "finance@university.com",
-        "Academics": "academics@university.com",
-        "Counselling": "counselling@university.com"
+        "Finance": "22320318@dut4life.za.ca",
+        "Academics": "22350050@dut4life.ac.za",
+        "Counselling": "22330788@dut4life.ac.za"
     }
 
     recipient = department_emails.get(department)
@@ -424,24 +496,40 @@ Joined On: {student.created_at.strftime('%b %d, %Y')}
 
     # --- Test results ---
     test_results_text = "\nTest Results:\n"
-    for result in student.test_results:
+    for result in getattr(student, 'test_results', []): 
         test_results_text += f"- {result.created_at.strftime('%b %d, %Y')}: Numbers={result.numbers_score}, Logic={result.logic_score}, Shapes={result.shapes_score}, Outcome={result.outcome_message}\n"
+    if not getattr(student, 'test_results', []):
+         test_results_text += "- No test results found.\n"
 
-    # --- Surveys ---
+
+    # --- Surveys (FIXED: Handles student.survey as a single object) ---
     surveys_text = "\nSurveys:\n"
-    for survey in student.survey if student.survey else []:
-        # if JSON stored as string
+    survey = getattr(student, 'survey', None) # Get the single survey object, or None
+    
+    if survey:
         survey_data = survey.survey_data
         if isinstance(survey_data, str):
-            survey_data = json.loads(survey_data)
+            try:
+                survey_data = json.loads(survey_data)
+            except json.JSONDecodeError:
+                survey_data = {} # Treat as empty if decoding fails
+
+        # Assuming survey_data is now a dict
         readable_data = {k: ("Struggle" if v==1 else "No struggle") for k, v in survey_data.items()}
         surveys_text += f"- Survey {survey.id} ({survey.created_at.strftime('%b %d, %Y')}): {readable_data}\n"
+    else:
+        surveys_text += "- No survey data found.\n"
+
 
     # --- Exercises completed ---
     exercises_text = "\nExercises Completed:\n"
-    for completion in student.exercises_completed:
+    completed_exercises = getattr(student, 'exercises_completed', [])
+    for completion in completed_exercises: 
         ex = completion.exercise
         exercises_text += f"- {ex.title} ({ex.part}): Completed on {completion.completed_at.strftime('%b %d, %Y')}\n"
+    if not completed_exercises:
+        exercises_text += "- No exercises completed.\n"
+
 
     # --- Compose email ---
     msg = Message(
@@ -461,14 +549,11 @@ The following student has been referred for your attention:
 Please review and take the necessary actions.
 
 Regards,
-{current_user.name}
+{referrer_name}
 """
     )
 
     mail.send(msg)
-
-
-
 
 
 

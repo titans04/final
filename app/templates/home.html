@@ -1,69 +1,390 @@
-<!-- templates/home.html -->
 {% extends "base.html" %}
 
-{% block title %}Numeraid{% endblock %}
+{% block title %}Numeraid - DUT Dyscalculia Diagnostic Platform{% endblock %}
 
 {% block content %}
-<div class="home">
-    <!-- Hero Section -->
-    <section class="hero">
-        <h1>Welcome to Numeraid</h1>
-        <p>Your digital companion for overcoming dyscalculia and mastering numbers with confidence.</p>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-        <!-- Hero Slider -->
-        <div class="hero-slider">
-        <img src="https://i.pinimg.com/1200x/a5/3a/ce/a53ace526291f7d8f05544e91237fa19.jpg" class="active">
-        <img src="https://i.pinimg.com/1200x/57/2b/f9/572bf9b8a0ac7390934f5dd78f9746bd.jpg">
-        <img src="https://i.pinimg.com/1200x/d3/c5/08/d3c50833fb353e8142f203b62e875acd.jpg">
+<style>
+    /* Reset any sidebar/dashboard styles that might interfere */
+    main {
+        margin-left: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    :root {
+        --color-blue: #4A90E2;
+        --color-deep-purple: #6C5CE7;
+        --color-light-purple: #A29BFE;
+        --color-teal: #00B894;
+        --color-green: #00D084;
+        --color-metallic-silver: #B2BEB5;
+        --color-light-grey: #f4f4f9;
+        --color-dark-grey: #4A4A4A;
+        --font-primary: 'Bebas Neue', sans-serif;
+        --font-secondary: 'Open Sans', sans-serif;
+    }
+
+    body {
+        font-family: var(--font-secondary);
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, var(--color-blue) 0%, var(--color-deep-purple) 100%);
+        color: white;
+        padding: 100px 0 80px 0;
+        text-align: center;
+    }
+
+    .hero-section h1 {
+        font-family: var(--font-primary);
+        font-size: 4rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+
+    .hero-section .lead {
+        font-size: 1.4rem;
+        margin-bottom: 30px;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+        font-weight: 400;
+    }
+
+    .cta-btn {
+        background: white;
+        color: var(--color-blue);
+        padding: 18px 50px;
+        font-size: 1.3rem;
+        font-weight: 700;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        margin-top: 20px;
+    }
+
+    .cta-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+        color: var(--color-deep-purple);
+    }
+
+    .info-section {
+        padding: 80px 0;
+        background: white;
+    }
+
+    .info-section h2 {
+        font-family: var(--font-primary);
+        font-size: 3rem;
+        color: var(--color-blue);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 40px;
+        text-align: center;
+    }
+
+    .info-card {
+        background: var(--color-light-grey);
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+        border-left: 5px solid var(--color-teal);
+    }
+
+    .info-card h3 {
+        color: var(--color-deep-purple);
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .info-card p {
+        color: var(--color-dark-grey);
+        line-height: 1.8;
+        margin-bottom: 0;
+    }
+
+    .stats-section {
+        background: var(--color-light-grey);
+        padding: 60px 0;
+    }
+
+    .stat-box {
+        text-align: center;
+        padding: 30px;
+    }
+
+    .stat-box .stat-number {
+        font-family: var(--font-primary);
+        font-size: 4rem;
+        color: var(--color-teal);
+        font-weight: bold;
+        display: block;
+        line-height: 1;
+    }
+
+    .stat-box .stat-label {
+        font-size: 1.1rem;
+        color: var(--color-dark-grey);
+        margin-top: 10px;
+        font-weight: 600;
+    }
+
+    .process-section {
+        padding: 80px 0;
+        background: white;
+    }
+
+    .process-section h2 {
+        font-family: var(--font-primary);
+        font-size: 3rem;
+        color: var(--color-blue);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 50px;
+        text-align: center;
+    }
+
+    .process-step {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 40px;
+    }
+
+    .step-number {
+        width: 60px;
+        height: 60px;
+        background: var(--color-teal);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        font-weight: bold;
+        flex-shrink: 0;
+        margin-right: 25px;
+        font-family: var(--font-primary);
+    }
+
+    .step-content h4 {
+        color: var(--color-deep-purple);
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .step-content p {
+        color: var(--color-dark-grey);
+        line-height: 1.7;
+        margin-bottom: 0;
+    }
+
+    .cta-section {
+        background: linear-gradient(135deg, var(--color-teal) 0%, var(--color-green) 100%);
+        color: white;
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .cta-section h2 {
+        font-family: var(--font-primary);
+        font-size: 3rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 20px;
+    }
+
+    .cta-section p {
+        font-size: 1.2rem;
+        margin-bottom: 30px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cta-secondary-btn {
+        background: white;
+        color: var(--color-teal);
+        padding: 18px 50px;
+        font-size: 1.3rem;
+        font-weight: 700;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .cta-secondary-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+        background: var(--color-light-purple);
+        color: white;
+    }
+
+    .dut-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 8px 20px;
+        border-radius: 30px;
+        display: inline-block;
+        margin-bottom: 20px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .hero-section h1 {
+            font-size: 2.5rem;
+        }
+        
+        .hero-section .lead {
+            font-size: 1.1rem;
+        }
+
+        .info-section h2, .process-section h2, .cta-section h2 {
+            font-size: 2rem;
+        }
+
+        .stat-box .stat-number {
+            font-size: 3rem;
+        }
+    }
+</style>
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="dut-badge">
+            <i class="fas fa-university"></i> Durban University of Technology
         </div>
-    </section>
+        <h1>Numeraid</h1>
+        <p class="lead">Comprehensive Dyscalculia Diagnostic Assessment Platform</p>
+        <p style="font-size: 1.1rem; max-width: 650px; margin: 0 auto 20px auto;">A confidential, evidence-based assessment tool designed to identify numerical processing difficulties and connect you with appropriate academic support.</p>
+        <a href="{{ url_for('main.signup') }}" class="cta-btn">Begin Assessment <i class="fas fa-arrow-right ms-2"></i></a>
+    </div>
+</section>
 
-    <!-- About Section -->
-    <section id="about" class="about">
-        <h2>About Numeraid</h2>
-        <p>
-        Dyscalculia is a learning difference that affects how individuals understand numbers and mathematical concepts. 
-        At Numeraid, we provide tailored tools, step-by-step explanations, and engaging exercises designed to make learning accessible and stress-free. 
-        Whether you're preparing for exams or just need everyday number support, Numeraid is here to guide you on your journey to numerical confidence.
-        </p>
-    </section>
-
-    <!-- Services Section -->
-    <section class="services">
-        <h2>Why Choose Numeraid?</h2>
-        <div class="service-box">
-        <img src="https://i.pinimg.com/1200x/be/57/ca/be57cab38b125c95635cc7103a38cab6.jpg">
-        <h3>Step-by-Step Help</h3>
-        <p>Clear, guided solutions to help you understand problems at your own pace.</p>
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <span class="stat-number">3-7%</span>
+                    <p class="stat-label">Of students may have dyscalculia</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <span class="stat-number">15-20</span>
+                    <p class="stat-label">Minutes to complete assessment</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <span class="stat-number">100%</span>
+                    <p class="stat-label">Confidential and secure</p>
+                </div>
+            </div>
         </div>
-        <div class="service-box">
-        <img src="https://i.pinimg.com/1200x/0b/cf/74/0bcf7404be523bc5c8b704f47fa008d8.jpg">
-        <h3>Personalized Tools</h3>
-        <p>Interactive exercises and adaptive features tailored to your learning style.</p>
-        </div>
-        <div class="service-box">
-        <img src="https://i.pinimg.com/1200x/ee/b5/58/eeb5582d75de4838c474d93db464df97.jpg">
-        <h3>Confidence Building</h3>
-        <p>Boost your confidence in math with practice designed to reduce anxiety.</p>
-        </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Decorative Section -->
-    <section class="decor">
-        <h2>Get Instant Study Help</h2>
-        <p>From your first assignment to your final exam, get the right tools designed to help you learn.</p>
-        <button class="join-btn">Join now</button>
-        <div class="circle purple" style="left:20px; bottom:-20px;"></div>
-        <div class="circle" style="right:40px; top:-20px;"></div>
-        <div class="circle small" style="right:100px; bottom:20px;"></div>
-    </section>
+<!-- What is Dyscalculia Section -->
+<section class="info-section">
+    <div class="container">
+        <h2>Understanding Dyscalculia</h2>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="info-card">
+                    <h3><i class="fas fa-brain me-2"></i> What is Dyscalculia?</h3>
+                    <p>Dyscalculia is a specific learning difference that affects the ability to understand, learn, and perform mathematical calculations. It impacts number sense, mathematical reasoning, and the application of mathematical concepts in daily life.</p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="info-card">
+                    <h3><i class="fas fa-lightbulb me-2"></i> Common Signs</h3>
+                    <p>Difficulty with basic arithmetic, trouble understanding mathematical symbols, challenges with time management and money handling, anxiety around numbers, and difficulty remembering mathematical procedures or formulas.</p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="info-card">
+                    <h3><i class="fas fa-check-circle me-2"></i> Why Get Assessed?</h3>
+                    <p>Early identification enables access to appropriate accommodations, specialized support services, and learning strategies tailored to your needs, helping you succeed academically and build confidence with numbers.</p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="info-card">
+                    <h3><i class="fas fa-user-shield me-2"></i> Your Privacy</h3>
+                    <p>All assessment data is confidential and stored securely. You control whether your results are shared with academic support staff. Your participation is voluntary and will not affect your academic standing.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-    <!-- Contact Section -->
-    <section id="contact" class="contact">
-        <h2>Contact Us</h2>
-        <p>Email: support@numeraid.com</p>
-        <p>Phone: +1 (555) 123-4567</p>
-        <p>Address: 123 Learning Lane, Education City, SA</p>
-    </section>
-</div>
+<!-- How It Works Section -->
+<section class="process-section">
+    <div class="container">
+        <h2>How It Works</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Create Your Account</h4>
+                        <p>Register using your DUT student credentials. Your information is kept secure and confidential throughout the process.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Complete the Assessment</h4>
+                        <p>Take the 15-20 minute diagnostic test at your own pace. The assessment evaluates various aspects of numerical processing and mathematical reasoning.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Review Your Results</h4>
+                        <p>Receive a detailed report identifying your strengths and areas of difficulty. Results include personalized recommendations for support.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Access Support Services</h4>
+                        <p>Connect with DUT's academic support team for accommodations, tutoring, and resources designed to help you succeed in your studies.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Ready to Begin?</h2>
+        <p>Take the first step toward understanding your numerical processing abilities and accessing the support you need to succeed.</p>
+        <a href="{{ url_for('main.signup') }}" class="cta-secondary-btn">Start Your Assessment Today</a>
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}

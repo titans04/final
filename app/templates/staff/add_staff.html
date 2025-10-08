@@ -1,7 +1,200 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Staff - Academic System</title>
+    <!-- Load Tailwind CSS via CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load FontAwesome for icons (used for the checkbox) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Define consistent CSS Variables based on your theme */
+        :root {
+            --primary-blue: #4B68A5;
+            --dark-blue: #304168; 
+            --light-blue: #d6ecff;
+            --white: #ffffff;
+            --light-gray: #f8f9fa;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
 
-{% block title %}Add Staff{% endblock %}
-{% block content %}
+        /* Custom Styles for a clean, academic look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .login {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--light-gray);
+            position: relative;
+            overflow: hidden;
+            padding: 2rem 0; /* Add padding for small screens */
+        }
+        
+        /* The decorative bubbles use the blue theme */
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.6;
+            filter: blur(70px);
+            z-index: 1;
+        }
+        .bubble.orange { 
+            background: var(--light-blue); 
+            width: 450px;
+            height: 450px;
+            top: -150px;
+            left: -150px;
+        }
+        .bubble.purple { 
+            background: var(--primary-blue);
+            width: 350px;
+            height: 350px;
+            bottom: -150px;
+            right: -150px;
+        }
+
+        .login-container {
+            display: flex;
+            max-width: 1000px;
+            width: 90%;
+            margin: auto;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            overflow: hidden;
+        }
+        .form-section {
+            padding: 3rem;
+            flex: 1 1 50%;
+            min-width: 300px;
+        }
+        .image-section {
+            flex: 1 1 50%;
+            /* Gradient using the theme colors */
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            min-height: 400px;
+            display: none; /* Hidden by default on small screens */
+        }
+        
+        .form-header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--dark-blue);
+        }
+        .form-header p {
+            color: var(--primary-blue);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            color: #999;
+        }
+        .divider span {
+            padding: 0 1rem;
+            color: var(--primary-blue);
+            font-weight: 700;
+        }
+
+        /* Form Control Styling */
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-control:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(75, 104, 165, 0.2); /* Primary blue focus ring */
+        }
+        
+        /* Checkbox Styling */
+        .form-checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-left: 0.25rem;
+        }
+        .form-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            appearance: none;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .form-checkbox:checked {
+            background-color: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+        /* Custom checkmark using FontAwesome */
+        .form-checkbox:checked::before {
+            content: '\f00c'; 
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            color: var(--white);
+            display: block;
+            text-align: center;
+            font-size: 0.8rem;
+            line-height: 1.1;
+        }
+        .form-label {
+            color: var(--dark-blue);
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* Submit Button Styling */
+        .submit-btn {
+            background-color: var(--primary-blue);
+            color: var(--white);
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: var(--dark-blue);
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 769px) {
+            .image-section {
+                display: block; /* Show image section on larger screens */
+            }
+        }
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                width: 95%;
+            }
+            .form-section {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- The content below now uses static HTML inputs, resolving Jinja TemplateSyntaxError in standalone view -->
 <div class="login">
     <div class="bubble orange"></div>
     <div class="bubble purple"></div>
@@ -9,6 +202,7 @@
     <div class="login-container">
         <div class="form-section">
             <div class="form-header">
+                <!-- Using a primary color for the main title -->
                 <h1>Numeraid</h1>
                 <p>Add New Staff Member</p>
             </div>
@@ -18,34 +212,58 @@
             </div>
 
             <form method="POST" class="staff-add-form">
-                {{ form.hidden_tag() }}
+                <!-- Original: {{ form.hidden_tag() }} -->
+                <!-- Note: This form must be wrapped by a Jinja template if you want to use the 'form' context variable -->
+                <input type="hidden" name="csrf_token" value="placeholder_token">
 
                 <div class="form-group mb-3">
-                    {{ form.username(class="form-control", placeholder="Username") }}
+                    <!-- Original: {{ form.username(class="form-control", placeholder="Username") }} -->
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Username" required>
                 </div>
                 <div class="form-group mb-3">
-                    {{ form.name(class="form-control", placeholder="Name") }}
+                    <!-- Original: {{ form.name(class="form-control", placeholder="Name") }} -->
+                    <input type="text" id="name" name="name" class="form-control" placeholder="Name" required>
                 </div>
                 <div class="form-group mb-3">
-                    {{ form.surname(class="form-control", placeholder="Surname") }}
+                    <!-- Original: {{ form.surname(class="form-control", placeholder="Surname") }} -->
+                    <input type="text" id="surname" name="surname" class="form-control" placeholder="Surname" required>
                 </div>
                 <div class="form-group mb-3">
-                    {{ form.password(class="form-control", placeholder="Password") }}
+                    <!-- Original: {{ form.password(class="form-control", placeholder="Password") }} -->
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
                 </div>
                 <div class="form-group mb-3">
-                    {{ form.confirm_password(class="form-control", placeholder="Confirm Password") }}
+                    <!-- Original: {{ form.confirm_password(class="form-control", placeholder="Confirm Password") }} -->
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Confirm Password" required>
                 </div>
                 
                 <div class="form-checkbox-group">
-                    {{ form.is_admin(class="form-checkbox") }}
-                    {{ form.is_admin.label(class="form-label") }}
+                    <!-- Original: {{ form.is_admin(class="form-checkbox", id="is_admin_checkbox") }} -->
+                    <input type="checkbox" id="is_admin_checkbox" name="is_admin" class="form-checkbox">
+                    <!-- Original: {{ form.is_admin.label(class="form-label", for="is_admin_checkbox") }} -->
+                    <label for="is_admin_checkbox" class="form-label">
+                        Grant administrative privileges
+                    </label>
                 </div>
                 
+                <!-- Button uses the primary blue theme color -->
                 <button type="submit" class="btn btn-primary submit-btn w-100">Add Staff</button>
+
+                <!-- Optional: Back to Manage Staff link (using placeholder URL) -->
+                <div class="mt-4 text-center text-sm">
+                    <a href="{{url_for('main.manage_staff')}}" class="font-medium hover:underline" style="color: var(--dark-blue);">
+                        <!-- Original: {{ url_for('main.manage_staff') }} -->
+                        ← Back to Staff List
+                    </a>
+                </div>
             </form>
         </div>
 
+        <!-- The image section is styled with a blue gradient background -->
         <div class="image-section"></div>
     </div>
 </div>
-{% endblock %}
+<!-- End of main content -->
+
+</body>
+</html>

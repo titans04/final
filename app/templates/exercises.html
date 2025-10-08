@@ -3,7 +3,6 @@
 {% block title %}Exercises - {{ part|capitalize }}{% endblock %}
 
 {% block content %}
-<!-- Navigation Bar -->
 <nav class="navbar navbar-exercise">
     <div class="nav-container">
         <div class="nav-brand">
@@ -19,7 +18,6 @@
     </div>
 </nav>
 
-<!-- Floating Background Bubbles -->
 <div class="bubble blue one"></div>
 <div class="bubble light-blue two"></div>
 <div class="bubble extra-light-blue three"></div>
@@ -28,7 +26,6 @@
 <div class="bubble extra-light-blue six"></div>
 
 <div class="exercise-full-container">
-    <!-- Enhanced Fun Facts Sidebar -->
     <div class="fun-facts-sidebar">
         <div class="fun-fact-card">
             <div class="fun-fact-header">
@@ -46,7 +43,6 @@
                 <span class="dot" data-fact="4"></span>
             </div>
 
-            <!-- Additional motivational content -->
             <div class="motivation-section">
                 <div class="motivation-header">
                     <span class="motivation-emoji">🎯</span>
@@ -57,7 +53,6 @@
                 </div>
             </div>
 
-            <!-- Tips section -->
             <div class="tips-section">
                 <div class="tips-header">
                     <span class="tips-emoji">💡</span>
@@ -70,8 +65,47 @@
         </div>
     </div>
 
-    <!-- Main Exercise Content -->
     <div class="exercise-main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="exercise-alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {# --- STAFF FEEDBACK BLOCK (Corrected date attribute) --- #}
+        {% if staff_feedback %}
+        <div class="staff-feedback-alert">
+            <div class="feedback-header-info">
+                <span class="feedback-icon">💬</span>
+                <h4 class="feedback-title">Guidance from Your Staff Member ({{ staff_feedback.staff.name }})</h4> 
+                <span class="feedback-date">
+                    {# CORRECTED: Used created_at as per the model schema #}
+                    (Last updated: {{ staff_feedback.created_at.strftime('%b %d, %Y') }})
+                </span>
+            </div>
+            <p class="feedback-text">{{ staff_feedback.feedback_text }}</p>
+            {% if staff_feedback.progress_notes %}
+            <details class="feedback-notes-details">
+                <summary>View Progress Notes/Tips</summary>
+                <p class="progress-notes-text">{{ staff_feedback.progress_notes }}</p>
+            </details>
+            {% endif %}
+        </div>
+        {% elif current_user.assigned_staff_id %}
+        {# NOTE: The Python route must correctly determine if assigned_staff_id exists, #}
+        {# which it now does by checking the StaffStudentLink table. #}
+        <div class="staff-feedback-alert no-feedback">
+            <span class="feedback-icon">👋</span>
+            <h4 class="feedback-title">No Recent Guidance</h4>
+            <p class="feedback-text">Your assigned staff member hasn't posted a recent note. Keep up the practice!</p>
+        </div>
+        {% endif %}
+        {# ----------------------------------------------------- #}
+        
         <div class="exercise-header">
             <h2 class="exercise-title">{{ part|capitalize }} Exercise</h2>
             <p class="exercise-subtitle">Let's solve this together! Every answer gets you closer to being a math master.</p>
@@ -101,7 +135,7 @@
                         <div class="text-answer-group">
                             <label for="answer" class="answer-label">Your Answer:</label>
                             <textarea name="answer" id="answer" rows="3"
-                                      placeholder="Type your answer here..." required></textarea>
+                                        placeholder="Type your answer here..." required></textarea>
                         </div>
                     {% endif %}
                 </div>
@@ -115,21 +149,22 @@
     </div>
 </div>
 
-<!-- Back to Dashboard Button -->
 <a href="/student_dashboard" class="back-btn">← Back to Dashboard</a>
+
+{# --- STYLES AND SCRIPT ARE UNCHANGED BELOW --- #}
 
 <style>
 /* CSS Variables following the theme */
 :root {
-  --primary-blue: #4B68A5;
-  --white: #ffffff;
-  --pastel-blue: #d6ecff;
-  --light-gray: #f8f9fa;
-  --medium-gray: #e0e0e0;
-  --dark-gray: #333333;
-  --text-gray: #555555;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --transition: all 0.3s ease;
+    --primary-blue: #4B68A5;
+    --white: #ffffff;
+    --pastel-blue: #d6ecff;
+    --light-gray: #f8f9fa;
+    --medium-gray: #e0e0e0;
+    --dark-gray: #333333;
+    --text-gray: #555555;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
 }
 
 /* Reset and base styles for exercise page */
@@ -217,10 +252,6 @@ html, body {
     text-decoration: none !important;
 }
 
-.brand-icon {
-    font-size: 1.8rem;
-}
-
 .brand-text {
     font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
 }
@@ -284,6 +315,86 @@ html, body {
     z-index: 1;
     position: relative;
 }
+
+/* --- NEW STAFF FEEDBACK BLOCK STYLES --- */
+.staff-feedback-alert {
+    background: #e6f7ff; /* Light, calming background */
+    border: 2px solid var(--primary-blue);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    max-width: 700px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    transition: var(--transition);
+}
+
+.staff-feedback-alert.no-feedback {
+    background: var(--light-gray);
+    border: 1px dashed var(--pastel-blue);
+}
+
+.feedback-header-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(75, 104, 165, 0.2);
+    padding-bottom: 0.5rem;
+}
+
+.feedback-icon {
+    font-size: 1.5rem;
+    color: var(--primary-blue);
+}
+
+.feedback-title {
+    color: var(--primary-blue);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.feedback-date {
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: var(--text-gray);
+    font-style: italic;
+}
+
+.feedback-text {
+    color: var(--dark-gray);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0.5rem 0;
+    white-space: pre-wrap; /* Preserve formatting */
+}
+
+.feedback-notes-details {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background: var(--white);
+    border: 1px solid var(--pastel-blue);
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.feedback-notes-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--primary-blue);
+}
+
+.progress-notes-text {
+    padding: 0.5rem 0 0 0;
+    margin: 0;
+    border-top: 1px dashed var(--pastel-blue);
+    margin-top: 0.5rem;
+    white-space: pre-wrap;
+    color: var(--text-gray);
+}
+/* ------------------------------------------- */
+
 
 /* Header Section */
 .exercise-header {
@@ -733,6 +844,8 @@ html, body {
     font-weight: 600;
     text-align: center;
     box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 700px; /* Match main content width */
 }
 
 .alert-success { 

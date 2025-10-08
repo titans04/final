@@ -59,18 +59,10 @@ class StaffLoginForm(FlaskForm):
     submit = SubmitField("Login")
 
 
-
-class AssignStaffForm(FlaskForm):
-    staff = SelectField('Select Staff', coerce=int)
-    students = SelectMultipleField('Select Students', coerce=int)
-    submit = SubmitField('Assign')
-
-
-
 class DiscalculiaSurveyForm(FlaskForm):
     math_difficulty = SelectField(
         "Rate your difficulty with numbers and calculations",
-        choices=[("1", "1 - No difficulty"), ("2", "2"), ("3", "3 - Moderate"), ("4", "4"), ("5", "5 - Severe")],
+        choices=[("1", "1 - No difficulty"), ("2", "2 - Slightly difficulty"), ("3", "3 - Moderate difficulty"), ("4", "4 - Considerable difficulty"), ("5", "5 - Severe difficulty")],
         validators=[DataRequired()]
     )
     reading_numbers = RadioField(

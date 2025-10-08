@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --primary-blue: #4B68A5;
+    --light-blue: #d6ecff;
+    --white: #ffffff;
+    --light-gray: #f8f9fa;
+    --text-gray: #555555;
+    --dark-gray: #333333;
+    --border-radius: 12px;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .about-wrapper {
+    max-width: 1000px;
+    margin: 4rem auto;
+    padding: 2rem;
+    background: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+  }
+
+  .about-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .about-header h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin-bottom: 1rem;
+  }
+
+  .about-header p {
+    font-size: 1.2rem;
+    color: var(--text-gray);
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .about-section {
+    margin-bottom: 3rem;
+  }
+
+  .about-section h2 {
+    font-size: 2rem;
+    color: var(--primary-blue);
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--primary-blue);
+    padding-left: 0.8rem;
+  }
+
+  .about-section p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: var(--text-gray);
+    margin-bottom: 1.2rem;
+  }
+
+  .mission {
+    background: var(--light-blue);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    text-align: center;
+    margin: 3rem 0;
+  }
+
+  .mission h2 {
+    font-size: 2rem;
+    color: var(--primary-blue);
+    margin-bottom: 1rem;
+  }
+
+  .mission p {
+    font-size: 1.2rem;
+    color: var(--dark-gray);
+    line-height: 1.8;
+  }
+
+  .back-btn {
+    display: inline-block;
+    margin-top: 2rem;
+    padding: 0.8rem 2rem;
+    background: var(--primary-blue);
+    color: var(--white);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: 0.3s;
+  }
+
+  .back-btn:hover {
+    background: #3a5588;
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 768px) {
+    .about-wrapper {
+      margin: 2rem 1rem;
+      padding: 1.5rem;
+    }
+    .about-header h1 {
+      font-size: 2.2rem;
+    }
+  }
+</style>
+
+<div class="about-wrapper">
+  <div class="about-header">
+    <h1>About Our Learning Disability Support</h1>
+    <p>We are dedicated to empowering students by ensuring that no learning disability becomes a barrier to academic success.</p>
+  </div>
+
+  <div class="about-section">
+    <h2>Who We Are</h2>
+    <p>The Learning Disability Unit is a student-centered support service designed to help learners with diagnosed learning disabilities access the assistance they need. Our mission is to provide fair, inclusive, and personalized support throughout your academic journey.</p>
+  </div>
+
+  <div class="about-section">
+    <h2>What We Do</h2>
+    <p>We assist students by verifying valid medical records and tailoring support plans that best suit their needs. This may include academic accommodations, specialized resources, or ongoing guidance to ensure every student reaches their full potential.</p>
+    <p>We collaborate with professional healthcare providers, lecturers, and academic advisors to create a learning environment that prioritizes equity and accessibility.</p>
+  </div>
+
+  <div class="mission">
+    <h2>Our Mission</h2>
+    <p>To build an inclusive academic community where students with learning disabilities receive the recognition, support, and opportunities they deserve — ensuring that every student can thrive, learn, and succeed without limitations.</p>
+  </div>
+
+  <div class="about-section">
+    <h2>How to Get Support</h2>
+    <p>Simply upload your valid medical record through our secure platform. Once submitted, our team will review your documentation and reach out with the next steps in 2–3 business days.</p>
+    <p>If you have any questions, feel free to contact our support team. We are here to help you every step of the way.</p>
+  </div>
+
+  <a href="{{ url_for('main.student_dashboard') }}" class="back-btn">← Back to Dashboard</a>
+</div>
+{% endblock %}

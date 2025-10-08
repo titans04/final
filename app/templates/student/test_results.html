@@ -3,80 +3,48 @@
 {% block title %}Test Results{% endblock %}
 
 {% block content %}
-<!-- Background bubbles -->
-<div class="bubble" style="width: 100px; height: 100px; top: 40px; left: 10%;"></div>
-<div class="bubble blue" style="width: 140px; height: 140px; top: 200px; right: 8%;"></div>
-<div class="bubble" style="width: 90px; height: 90px; bottom: 120px; left: 25%;"></div>
+<div class="results-page">
 
-<div class="container py-5 position-relative">
-  <h2 class="text-center dashboard-heading">Results</h2>
-  
-  {% if no_results %}
-    <div class="results-card">
-      <div class="alert alert-info text-center">
-        <h4>No Test Results Available</h4>
-        <p>You haven't completed any tests yet. <a href="{{ url_for('main.start_test') }}">Start your first test</a> to see your results here.</p>
+  <!-- Floating Bubbles -->
+  <div class="bubble" style="width: 100px; height: 100px; top: 40px; left: 10%;"></div>
+  <div class="bubble blue" style="width: 140px; height: 140px; top: 200px; right: 8%;"></div>
+  <div class="bubble" style="width: 90px; height: 90px; bottom: 120px; left: 25%;"></div>
+
+  <!-- Page Title -->
+  <h2 class="dashboard-heading text-center">Results</h2>
+
+  <!-- Results Section -->
+  <div class="container d-flex justify-content-center align-items-center flex-column py-5">
+    {% if no_results %}
+      <div class="results-card text-center">
+        <div class="alert alert-info">
+          <h4>No Test Results Available</h4>
+          <p>You haven't completed any tests yet. 
+            <a href="{{ url_for('main.start_test') }}">Start your first test</a> to see your results here.
+          </p>
+        </div>
       </div>
-    </div>
-  {% else %}
-    <!-- Subject Bar Chart Section -->
-    <div class="results-card">
-      <div class="score-chart-title mb-3 text-center">Overall Progress by Subject</div>
-      <canvas id="subjectChart" height="200"></canvas>
-    </div>
-    
-    <!-- Summary Box -->
-    <div class="results-card">
-      <div class="score-chart-title mb-3">Summary</div>
-      <ul class="list-unstyled mb-0">
-        <li><strong>Numbers Score:</strong> {{ numbers_score }} / 5</li>
-        <li><strong>Logic Score:</strong> {{ logic_score }} / 5</li>
-        <li><strong>Shapes Score:</strong> {{ shapes_score }} / 5</li>
-        <li><strong>Total Test Score:</strong> {{ total_test_score }} / 15</li>
-        <li><strong>Survey Score:</strong> {{ total_survey_score }}</li>
-        <li><strong>Combined Risk Score:</strong> {{ combined_risk_score }}</li>
-        <li><strong>Disability Likelihood:</strong> <span class="badge bg-{{ 'danger' if likelihood == 'High' else 'warning' if likelihood == 'Moderate' else 'success' }}">{{ likelihood }}</span></li>
-        <li><strong>Outcome Message:</strong> {{ message }}</li>
-      </ul>
-    </div>
-    
-    <!-- Test Table -->
-    <div class="results-card">
-      <h5 class="score-chart-title mb-3">Test Breakdown</h5>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Section</th>
-              <th>Score</th>
-              <th>Percentage</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Numbers</td>
-              <td>{{ numbers_score }} / 5</td>
-              <td>{{ (numbers_score / 5 * 100) | round(1) }}%</td>
-            </tr>
-            <tr>
-              <td>Logic</td>
-              <td>{{ logic_score }} / 5</td>
-              <td>{{ (logic_score / 5 * 100) | round(1) }}%</td>
-            </tr>
-            <tr>
-              <td>Shapes</td>
-              <td>{{ shapes_score }} / 5</td>
-              <td>{{ (shapes_score / 5 * 100) | round(1) }}%</td>
-            </tr>
-          </tbody>
-        </table>
+    {% else %}
+      <div class="results-card text-center">
+        <div class="score-chart-title mb-3">Your Assessment Results</div>
+        <ul class="list-unstyled mb-0">
+          <li>
+            <strong>Disability Likelihood:</strong>
+            <span class="badge bg-{{ 'danger' if likelihood == 'High' else 'warning' if likelihood == 'Moderate' else 'success' }} fs-6 p-2">
+              {{ likelihood }}
+            </span>
+          </li>
+          <li class="pt-3">
+            <strong>Outcome Message:</strong> {{ message }}
+          </li>
+        </ul>
       </div>
-    </div>
-  {% endif %}
+    {% endif %}
+  </div>
+
+  <!-- Back Button -->
+  <a href="{{ url_for('main.student_dashboard') }}" class="back-btn">Back to Dashboard</a>
 </div>
-
-<!-- Back Button -->
-<a href="{{ url_for('main.student_dashboard') }}" class="back-btn">Back to Dashboard</a>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -90,25 +58,35 @@
   --light-gray: #f8f9fa;
   --medium-gray: #e0e0e0;
   --dark-gray: #333333;
-  --text-gray: #555555;
   --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   --transition: all 0.3s ease;
 }
 
 body {
   background: var(--light-gray);
-  font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-family: 'Segoe UI', Roboto, sans-serif;
   position: relative;
-  padding-bottom: 100px;
   overflow-x: hidden;
 }
 
+.results-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-bottom: 100px;
+}
+
+/* Page Heading */
 .dashboard-heading {
   color: var(--primary-blue);
   font-weight: 600;
-  margin-bottom: 2rem;
+  margin: 2rem 0;
   z-index: 2;
   position: relative;
+  text-align: center;
 }
 
 /* Floating Background Bubbles */
@@ -120,10 +98,7 @@ body {
   animation: floatBubble 12s infinite ease-in-out;
   z-index: 0;
 }
-
-.bubble.blue { 
-  background: var(--pastel-blue); 
-}
+.bubble.blue { background: var(--pastel-blue); }
 
 @keyframes floatBubble {
   0% { transform: translateY(0) rotate(0deg); opacity: 0.4; }
@@ -132,7 +107,7 @@ body {
   100% { transform: translateY(0) rotate(360deg); opacity: 0.4; }
 }
 
-/* Contact Cards */
+/* Results Card */
 .results-card {
   background: var(--white);
   border: 2px solid var(--pastel-blue);
@@ -140,11 +115,12 @@ body {
   padding: 2rem;
   text-align: center;
   transition: var(--transition);
-  height: 100%;
+  width: 100%;
+  max-width: 600px;
   box-shadow: var(--shadow);
+  margin-top: 1rem;
   position: relative;
   z-index: 1;
-  margin-bottom: 2rem;
 }
 
 .results-card:hover {
@@ -154,12 +130,11 @@ body {
 
 .score-chart-title {
   color: var(--primary-blue);
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 600;
-  text-align: left;
 }
 
-/* Back to Dashboard Button */
+/* Back Button */
 .back-btn {
   position: fixed;
   bottom: 20px;
@@ -178,173 +153,32 @@ body {
 .back-btn:hover {
   background: #3a5588;
   color: var(--white);
-  text-decoration: none;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* Table styling */
-.table {
-  background: var(--white);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.table thead {
-  background: var(--pastel-blue);
-}
-
-.table thead th {
-  border: none;
-  color: var(--primary-blue);
-  font-weight: 600;
-  padding: 1rem;
-}
-
-.table tbody td {
-  border: none;
-  padding: 1rem;
-  vertical-align: middle;
-}
-
-.table tbody tr {
-  border-bottom: 1px solid var(--medium-gray);
-}
-
-.table tbody tr:hover {
-  background-color: rgba(214, 236, 255, 0.3);
-}
-
-/* Summary list styling */
+/* List Styling */
 .list-unstyled li {
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--medium-gray);
   text-align: left;
   color: var(--dark-gray);
 }
+.list-unstyled li:last-child { border-bottom: none; }
+.list-unstyled strong { color: var(--primary-blue); }
 
-.list-unstyled li:last-child {
-  border-bottom: none;
-}
-
-.list-unstyled strong {
-  color: var(--primary-blue);
-}
-
-/* Responsive adjustments */
+/* Responsive */
 @media (max-width: 768px) {
-  .container {
-    padding: 2rem 1rem;
-  }
-  
-  .results-card {
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .dashboard-heading {
-    font-size: 1.8rem;
-  }
-  
+  .results-card { padding: 1.5rem; }
+  .dashboard-heading { font-size: 1.8rem; }
   .back-btn {
     bottom: 10px;
     left: 10px;
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
   }
-  
-  /* Adjust bubble sizes for mobile */
-  .bubble {
-    width: 60px !important;
-    height: 60px !important;
-  }
-  
-  .bubble.blue {
-    width: 80px !important;
-    height: 80px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .score-chart-title {
-    font-size: 1rem;
-  }
-  
-  .table {
-    font-size: 0.9rem;
-  }
+  .bubble { width: 60px !important; height: 60px !important; }
+  .bubble.blue { width: 80px !important; height: 80px !important; }
 }
 </style>
-
-<script>
-// Chart.js Bar Chart Script
-document.addEventListener('DOMContentLoaded', function() {
-  {% if not no_results %}
-  const ctx = document.getElementById('subjectChart').getContext('2d');
-  const subjectChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Numbers', 'Logic', 'Shapes'],
-      datasets: [{
-        label: 'Score (out of 5)',
-        data: [{{ numbers_score }}, {{ logic_score }}, {{ shapes_score }}],
-        backgroundColor: [
-          '#4B68A5',
-          '#e53935',
-          '#ffb400'
-        ],
-        borderRadius: 10,
-        barThickness: 30,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          beginAtZero: true,
-          max: 5,
-          ticks: { 
-            color: '#333',
-            font: {
-              family: "'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif"
-            }
-          },
-          grid: { 
-            display: true,
-            color: '#e0e0e0'
-          }
-        },
-        y: {
-          ticks: { 
-            color: '#333', 
-            font: { 
-              weight: '600',
-              family: "'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif"
-            } 
-          },
-          grid: { display: false }
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#4B68A5',
-          titleColor: '#ffffff',
-          bodyColor: '#ffffff',
-          borderColor: '#4B68A5',
-          borderWidth: 1,
-          callbacks: {
-            label: function(context) {
-              return `Score: ${context.parsed.x} / 5`;
-            }
-          }
-        }
-      }
-    }
-  });
-  {% endif %}
-});
-</script>
 {% endblock %}

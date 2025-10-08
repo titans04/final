@@ -1,30 +1,191 @@
 {% extends "base.html" %}
 
+{% block title %}Survey Analysis for {{ student.name }} {{ student.surname }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* VARIABLES */
+    :root {
+        --color-blue: #4A90E2;
+        --color-teal: #00B894;
+        --color-green: #00D084;
+        --color-red: #EF4444;
+        --color-light-grey: #f4f4f9;
+        --color-dark-grey: #4A4A4A;
+        --color-yellow: #FFC107;
+    }
+
+    /* CONTAINER AND HEADER STYLES */
+    .student-survey-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    h2 {
+        color: var(--color-blue);
+        border-bottom: 2px solid var(--color-light-grey);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .student-details {
+        color: var(--color-dark-grey);
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    /* GRAPH STYLES */
+    .chart-card {
+        background: var(--color-light-grey);
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        margin-bottom: 3rem;
+    }
+
+    /* DETAIL CARD STYLES */
+    .survey-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    
+    .survey-card h5 {
+        background-color: var(--color-blue);
+        color: white;
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 0;
+        font-size: 1.1rem;
+    }
+
+    .survey-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .survey-table th, .survey-table td {
+        padding: 1rem 1.25rem;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .survey-table th {
+        background-color: var(--color-light-grey);
+        font-weight: 600;
+        color: var(--color-dark-grey);
+    }
+
+    /* RESPONSE BADGES */
+    .response-struggle, .response-no-struggle {
+        display: inline-block;
+        padding: 0.3rem 0.6rem;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .response-struggle {
+        background-color: var(--color-red);
+        color: white;
+    }
+
+    .response-no-struggle {
+        background-color: var(--color-teal);
+        color: white;
+    }
+
+    /* BACK BUTTON */
+    .back-btn {
+        display: inline-block;
+        background-color: var(--color-dark-grey);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        margin-top: 1rem;
+        transition: background-color 0.3s;
+    }
+
+    .back-btn:hover {
+        background-color: #333;
+    }
+    
+    /* MOBILE STYLES */
+    @media (max-width: 600px) {
+        .survey-table thead {
+            display: none;
+        }
+
+        .survey-table tr {
+            display: block;
+            margin-bottom: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .survey-table td {
+            display: block;
+            text-align: right;
+            padding: 0.5rem 1.25rem;
+            border: none;
+            position: relative;
+        }
+
+        .survey-table td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 1.25rem;
+            font-weight: bold;
+            color: var(--color-blue);
+        }
+    }
+</style>
+{% endblock %}
+
+
 {% block content %}
 <div class="student-survey-container">
-    <h2>{{ student.name }}'s Survey</h2>
-    <p class="student-details">Student ID: {{ student.id }} | Email: {{ student.student_email }}</p>
-
+    <h2><i class="fas fa-chart-bar me-2"></i> Survey Analysis for {{ student.name }} {{ student.surname }}</h2>
+    <p class="student-details">Student ID: **{{ student.id }}** | Email: **{{ student.student_email }}**</p>
+    
     {% if surveys %}
+
+        <div class="chart-card">
+            <h4 class="text-center" style="color: var(--color-dark-grey);"><i class="fas fa-database me-2"></i> Aggregated Results ({{ surveys|length }} Surveys)</h4>
+            <div style="height: 400px; width: 100%;">
+                <canvas id="surveyChart"></canvas>
+            </div>
+        </div>
+
+        <h3 style="color: var(--color-blue); margin-top: 3rem;">Individual Survey History</h3>
+        
         {% for survey in surveys %}
         <div class="survey-card">
-            <h5>Survey taken on {{ survey.created_at.strftime('%b %d, %Y') }}</h5>
+            <h5>
+                <i class="fas fa-calendar-alt me-2"></i> Survey taken on **{{ survey.created_at.strftime('%b %d, %Y at %H:%M') }}**
+            </h5>
             <table class="survey-table">
                 <thead>
                     <tr>
-                        <th>Question</th>
+                        <th>Question / Category</th>
                         <th>Response</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for key, value in survey.survey_data.items() %}
+                    {% for key, value in survey.readable_data.items() %}
                     <tr>
-                        <td data-label="Question">{{ key.replace('_', ' ').title() }}</td>
+                        <td data-label="Question">{{ key }}</td>
                         <td data-label="Response">
-                            {% if value == 1 %}
-                                <span class="response-struggle">Struggle</span>
+                            {% if value == 'Struggle' %}
+                                <span class="response-struggle"><i class="fas fa-times-circle me-1"></i> {{ value }}</span>
                             {% else %}
-                                <span class="response-no-struggle">No struggle</span>
+                                <span class="response-no-struggle"><i class="fas fa-check-circle me-1"></i> {{ value }}</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -33,10 +194,74 @@
             </table>
         </div>
         {% endfor %}
+        
     {% else %}
-        <p class="student-details">No survey submitted by this student yet.</p>
+        <p class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No survey submitted by this student yet.
+        </p>
     {% endif %}
 
-    <a href="{{ url_for('main.staff_dashboard') }}" class="back-btn">Back to Dashboard</a>
+    <a href="{{ url_for('main.manage_students') }}" class="back-btn"><i class="fas fa-arrow-left me-2"></i> Back to Manage Students</a>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if there is chart data and surveys exist
+        const rawData = '{{ chart_data | safe }}'; 
+        const ctx = document.getElementById('surveyChart');
+        
+        if (rawData && ctx) {
+            try {
+                // Parse the JSON string passed from the Flask route
+                const chartData = JSON.parse(rawData);
+                
+                // Initialize the Chart
+                new Chart(ctx.getContext('2d'), {
+                    type: 'bar', // Bar chart for comparative counts
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false, // Allows chart to respect the fixed height/width of its container
+                        scales: {
+                            x: {
+                                stacked: true, // Stack 'Struggle' and 'No Struggle' bars
+                                title: {
+                                    display: true,
+                                    text: 'Survey Categories'
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Total Responses'
+                                },
+                                ticks: {
+                                    precision: 0 // Ensure only integers are shown on the count axis
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `Comparison of Struggles Across ${chartData.total_surveys} Submissions`
+                            },
+                            legend: {
+                                position: 'bottom',
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error parsing chart data or initializing chart:", e);
+                ctx.outerHTML = "<p class='alert alert-warning text-center'><i class='fas fa-exclamation-triangle'></i> Could not render analysis graph.</p>";
+            }
+        }
+    });
+</script>
 {% endblock %}

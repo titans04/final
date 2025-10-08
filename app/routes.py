@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 from .models import *
 from .extensions import db, socketio
-from .services import get_next_question, ai_evaluate_answer , assign_student_to_staff,send_department_email
+from .services import get_next_question, ai_evaluate_answer, assign_student_to_staff, send_department_email, generate_shape_image
 from .forms import  *
 from .extensions import mail
 from sqlalchemy import or_, and_
@@ -14,6 +14,7 @@ from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import pandas as pd
+import json
 
 
 main = Blueprint("main", __name__)
@@ -487,71 +488,239 @@ def start_test():
 @main.route("/test/<part>/<int:q_num>/<difficulty>", methods=["GET", "POST"])
 @login_required
 def test_part(part, q_num, difficulty):
-    if part not in ["numbers", "logic", "shapes"]:
-        print("Invalid test part.", "danger")
+    """Handle test questions with robust error handling"""
+    
+    # Validate part
+    valid_parts = ['numbers', 'logic', 'shapes']
+    if part.lower() not in valid_parts:
+        flash('Invalid test section', 'danger')
         return redirect(url_for("main.student_dashboard"))
-
-    # POST: process student's answer
-    if request.method == "POST": 
-        # Handle None values properly by providing default empty string and strip
-        student_answer = request.form.get("answer", "").strip()
+    
+    # Validate question number
+    if q_num < 1 or q_num > 5:
+        flash('Invalid question number', 'danger')
+        return redirect(url_for("main.student_dashboard"))
+    
+    # Initialize session data if not exists
+    if f'{part}_responses' not in session:
+        session[f'{part}_responses'] = []
+        session[f'{part}_score'] = 0
+    
+    if request.method == "POST":
+        try:
+            # Get student answer
+            student_answer = request.form.get('answer', '').strip()
+            
+            if not student_answer:
+                flash('Please provide an answer', 'warning')
+                return redirect(url_for('main.test_part', part=part, q_num=q_num, difficulty=difficulty))
+            
+            # Get the correct answer from session (stored during question generation)
+            question_data = session.get(f"question_data_{part}_{q_num}")
+            
+            if not question_data or 'answer' not in question_data:
+                flash('Session error. Restarting test.', 'warning')
+                # Clear session and restart
+                session.pop(f'{part}_responses', None)
+                session.pop(f'{part}_score', None)
+                return redirect(url_for('main.test_part', part=part, q_num=1, difficulty='easy'))
+            
+            correct_answer = question_data.get('answer', '')
+            question_text = question_data.get('question', '')
+            
+            # Evaluate answer
+            is_correct = ai_evaluate_answer(student_answer, correct_answer, part, question_text)
+            
+            # Store response
+            responses = session.get(f'{part}_responses', [])
+            responses.append({
+                'question': question_text,
+                'student_answer': student_answer,
+                'correct_answer': correct_answer,
+                'is_correct': is_correct
+            })
+            session[f'{part}_responses'] = responses
+            
+            # Update score
+            if is_correct:
+                session[f'{part}_score'] = session.get(f'{part}_score', 0) + 1
+            
+            # Determine next question or part
+            if q_num < 5:
+                next_q = q_num + 1
+                # Simplified difficulty logic
+                if q_num == 1:
+                    next_diff = "easy"
+                elif q_num in [2, 3]:
+                    next_diff = "medium"
+                else:
+                    next_diff = "hard"
+                
+                # Clear the cached question for the next one
+                session.pop(f"question_data_{part}_{next_q}", None)
+                
+                return redirect(url_for('main.test_part', part=part, q_num=next_q, difficulty=next_diff))
+            else:
+                # Finished current part - check if we should move to next part or finish
+                if part == "numbers":
+                    print("✅ Numbers part complete, moving to Logic")
+                    session.pop(f"question_data_logic_1", None)
+                    return redirect(url_for('main.test_part', part="logic", q_num=1, difficulty="easy"))
+                elif part == "logic":
+                    print("✅ Logic part complete, moving to Shapes")
+                    session.pop(f"question_data_shapes_1", None)
+                    return redirect(url_for('main.test_part', part="shapes", q_num=1, difficulty="easy"))
+                elif part == "shapes":
+                    # ALL PARTS COMPLETE - Save results to database
+                    print("=" * 50)
+                    print("🎉 SHAPES COMPLETE - ALL 3 PARTS DONE!")
+                    print("=" * 50)
+                    
+                    # Get all scores from session
+                    numbers_score = session.get('numbers_score', 0)
+                    logic_score = session.get('logic_score', 0)
+                    shapes_score = session.get('shapes_score', 0)
+                    
+                    # Calculate total score
+                    total_score = numbers_score + logic_score + shapes_score
+                    max_score = 15  # 5 questions per part × 3 parts
+                    
+                    # Get survey data if exists
+                    survey = StudentSurvey.query.filter_by(student_id=current_user.id).first()
+                    survey_scores = {}
+                    if survey:
+                        if isinstance(survey.survey_data, str):
+                            survey_scores = json.loads(survey.survey_data)
+                        else:
+                            survey_scores = survey.survey_data
+                    
+                    total_survey_score = sum(survey_scores.values()) if survey_scores else 0
+                    
+                    # Determine disability likelihood based on scores
+                    # Lower test scores + higher survey scores = higher likelihood
+                    test_risk_score = max_score - total_score
+                    combined_risk_score = test_risk_score + total_survey_score
+                    
+                    if combined_risk_score >= 15:
+                        likelihood = "high"
+                        message = "High likelihood of dyscalculia. We recommend further professional assessment."
+                    elif combined_risk_score >= 10:
+                        likelihood = "medium"
+                        message = "Moderate indicators present. Consider scheduling an evaluation."
+                    else:
+                        likelihood = "low"
+                        message = "Low indicators of dyscalculia. Continue monitoring progress."
+                    
+                    # Prepare staff breakdown
+                    staff_breakdown = {
+                        "test_scores": {
+                            "numbers": numbers_score,
+                            "logic": logic_score,
+                            "shapes": shapes_score
+                        },
+                        "survey_scores": survey_scores,
+                        "combined_risk_score": combined_risk_score
+                    }
+                    
+                    # Save to database
+                    new_result = TestResult(
+                        student_id=current_user.id,
+                        numbers_score=numbers_score,
+                        logic_score=logic_score,
+                        shapes_score=shapes_score,
+                        disability_likelihood=likelihood,
+                        outcome_message=message,
+                        staff_breakdown=staff_breakdown
+                    )
+                    
+                    db.session.add(new_result)
+                    
+                    # Assign student to staff member
+                    assigned_staff = assign_student_to_staff(current_user)
+                    if assigned_staff:
+                        print(f"✅ Student assigned to staff: {assigned_staff.name}")
+                    
+                    db.session.commit()
+                    
+                    # Clear test session data
+                    session.pop('numbers_score', None)
+                    session.pop('logic_score', None)
+                    session.pop('shapes_score', None)
+                    session.pop('numbers_responses', None)
+                    session.pop('logic_responses', None)
+                    session.pop('shapes_responses', None)
+                    
+                    # Clear all cached questions
+                    for p in ['numbers', 'logic', 'shapes']:
+                        for q in range(1, 6):
+                            session.pop(f"question_data_{p}_{q}", None)
+                    
+                    print("✅ Test results saved successfully!")
+                    flash('Test completed successfully!', 'success')
+                    
+                    return redirect(url_for('main.test_results'))
+                
+        except Exception as e:
+            print(f"❌ Error processing answer: {e}")
+            import traceback
+            traceback.print_exc()
+            flash('An error occurred. Please try again.', 'danger')
+            return redirect(url_for('main.test_part', part=part, q_num=q_num, difficulty=difficulty))
+    
+    # GET request - generate/display question
+    try:
+        # Check if question already generated (page refresh)
         question_data = session.get(f"question_data_{part}_{q_num}")
-
-        # Safety check for missing question data
-        if not question_data or "answer" not in question_data or "question" not in question_data:
-            print("Error: Question data not found or is incomplete.", "danger")
-            return redirect(url_for("main.student_dashboard"))
-
-        correct_answer = question_data.get("answer", "")
-        question_text = question_data.get("question", "")
-
-        # Debugging prints (now safe from AttributeError)
-        print("student_answer:", student_answer)
-        print("correct_answer:", correct_answer)
-
-        # Safely evaluate the answer
-        correct = ai_evaluate_answer(student_answer, correct_answer, part, question_text)
-
-        # Save score in session
-        session[part + "_score"] = session.get(part + "_score", 0) + (1 if correct else 0)
-
-        # Determine next question or part
-        if q_num < 5:
-            next_q = q_num + 1
-            # Simplified difficulty logic
-            if q_num == 1:
-                next_diff = "easy"
-            elif q_num in [2, 3]:
-                next_diff = "medium"
-            else:
-                next_diff = "hard" 
-
-            return redirect(url_for("main.test_part", part=part, q_num=next_q, difficulty=next_diff))
+        
+        if not question_data:
+            # Generate new question
+            print(f"🆕 Generating new question for {part}/Q{q_num}")
+            question_data = get_next_question(part, difficulty, q_num)
+            
+            # Check for errors
+            if not question_data or 'error' in question_data:
+                print(f"❌ Question generation failed: {question_data}")
+                flash('Unable to generate question. Using backup question.', 'info')
+                # This shouldn't happen now with complete fallbacks, but just in case
+                flash('Critical error loading test. Please try again later.', 'danger')
+                return redirect(url_for("main.student_dashboard"))
+            
+            # Store in session to prevent regeneration on refresh
+            # Don't store shape_image to save session space
+            session_data = {
+                'question': question_data.get('question'),
+                'answer': question_data.get('answer'),
+                'options': question_data.get('options'),
+                'shape_type': question_data.get('shape_type')
+            }
+            session[f"question_data_{part}_{q_num}"] = session_data
+            print(f"✅ Question stored in session for {part}/Q{q_num}")
         else:
-            # Move to next part
-            next_part = "logic" if part == "numbers" else "shapes" if part == "logic" else None
-            if next_part:
-                return redirect(url_for("main.test_part", part=next_part, q_num=1, difficulty="easy"))
-            else:
-                return redirect(url_for("main.test_results"))
-
-    # GET: generate question dynamically
-    question_data = get_next_question(part, difficulty)
-
-    # Check if there was an error generating the question
-    if not question_data or "error" in question_data:
-        print(question_data.get("error", "Failed to generate question."), "danger")
+            print(f"📋 Using cached question for {part}/Q{q_num}")
+        
+        # Regenerate shape image if needed (don't store in session - too large)
+        shape_image = None
+        if part == "shapes" and question_data.get('shape_type'):
+            shape_image = generate_shape_image(question_data['shape_type'], {})
+        
+        # Prepare template data
+        return render_template(
+            "/student/test_part.html",
+            part=part.capitalize(),
+            q_num=q_num,
+            question=question_data.get('question', 'Question unavailable'),
+            options=question_data.get('options'),
+            shape_image=question_data.get('shape_image'),
+            difficulty=difficulty
+        )
+        
+    except Exception as e:
+        print(f"❌ Critical error in test route: {e}")
+        import traceback
+        traceback.print_exc()
+        flash('An unexpected error occurred. Please try again.', 'danger')
         return redirect(url_for("main.student_dashboard"))
-
-    # Store the question and its answer in the session
-    session[f"question_data_{part}_{q_num}"] = question_data
-
-    return render_template(
-        "/student/test_part.html",
-        part=part.capitalize(),
-        q_num=q_num,
-        **question_data
-    )
+    
 
 
 # ------------------Display final results------------------
@@ -595,13 +764,45 @@ def test_results():
 
 
 #--------------------Exercises (students only)--------------------
+# Assuming your blueprint is named 'main'
 @main.route("/exercises/<part>", methods=["GET", "POST"])
 @login_required
 def exercises(part):
+    # =========================================================
+    # --- CRITICAL FIX: Validate user is a Student object ---
+    # Imports: Ensure 'Student' model and 'isinstance' are available.
+    if not isinstance(current_user, Student):
+        flash("Unauthorized access. Only students can access exercises.", "danger")
+        return redirect(url_for("main.home"))
+    # =========================================================
+
+    # --- FEEDBACK RETRIEVAL LOGIC ---
+    staff_feedback = None
+    
+    # CRITICAL FIX: Get assigned staff ID via the StaffStudentLink model
+    assigned_staff_link = StaffStudentLink.query.filter_by(student_id=current_user.id).first()
+    assigned_staff_id = assigned_staff_link.staff_id if assigned_staff_link else None
+    
+    if assigned_staff_id:
+        # Fetch the MOST RECENT feedback from the assigned staff member
+        try:
+            staff_feedback = StaffFeedback.query.filter(
+                StaffFeedback.student_id == current_user.id,
+                StaffFeedback.staff_id == assigned_staff_id
+            ).order_by(StaffFeedback.created_at.desc()).first() # Using created_at based on your schema
+        except Exception as e:
+            print(f"Error retrieving staff feedback: {e}")
+            flash("Could not retrieve staff guidance due to a database error.", "warning")
+            staff_feedback = None
+    # -----------------------------------
+
     # Reset session for new exercise start
     if request.method == "GET":
-        session["exercise_q_num"] = 1
-        session["exercise_difficulty"] = "easy"
+        # Only reset if we are starting a fresh set, or if the part changes
+        if session.get("current_part") != part:
+            session["exercise_q_num"] = 1
+            session["exercise_difficulty"] = "easy"
+            session["current_part"] = part
 
     # Retrieve current difficulty and question number from session, or set defaults
     difficulty = session.get("exercise_difficulty", "easy")
@@ -610,7 +811,6 @@ def exercises(part):
     # If the user is submitting an answer
     if request.method == "POST":
         student_answer = request.form.get("answer")
-        # Retrieve the correct answer from the session to evaluate
         correct_answer = session.get("correct_answer")
         question_text = session.get("question_text")
         
@@ -618,26 +818,22 @@ def exercises(part):
             flash("Error: No question data found. Please restart the exercise.", "danger")
             return redirect(url_for("main.student_dashboard"))
 
-        # NOTE: ai_evaluate_answer and get_next_question must be imported or defined elsewhere
         is_correct = ai_evaluate_answer(student_answer, correct_answer, part, question_text)
 
         if is_correct:
-            flash("Correct! Great job!", "success")
+            flash("Correct! Great job! 🎉", "success")
             
             # 1. Log the dynamically generated exercise to the database
-            # Ensure `Exercise` and `db` are imported
             new_exercise = Exercise(
-                title=f"AI-generated {part} exercise",
+                title=f"AI-generated {part} exercise (Q{q_num})",
                 description=question_text,
-                video_link=None, # You can add a link if your AI generates one
                 part=part.capitalize(),
-                approved=False # Since it's AI-generated, it's not pre-approved
+                approved=False
             )
             db.session.add(new_exercise)
-            db.session.commit()
-
-            # 2. Now log the ExerciseCompletion with the new exercise ID
-            # Ensure `ExerciseCompletion` is imported
+            
+            # 2. Log the ExerciseCompletion with the new exercise ID
+            db.session.flush() # Get the new_exercise.id before commit
             new_completion = ExerciseCompletion(
                 student_id=current_user.id,
                 exercise_id=new_exercise.id
@@ -650,12 +846,11 @@ def exercises(part):
             
             return redirect(url_for("main.exercises", part=part))
         else:
-            flash(f"Incorrect. The correct answer was: {correct_answer}.", "warning")
             # For incorrect answers, don't increment q_num, allow a retry
+            flash(f"Incorrect. The correct answer was: {correct_answer}.", "warning")
             return redirect(url_for("main.exercises", part=part))
 
     # For a GET request, generate a new question
-    # Ensure `get_next_question` is imported
     exercise_data = get_next_question(part, difficulty=difficulty, q_num=q_num)
     
     if "error" in exercise_data:
@@ -666,17 +861,16 @@ def exercises(part):
     session["question_text"] = exercise_data["question"]
     session["correct_answer"] = exercise_data["answer"]
 
-    # Render the exercises template
+    # Render the exercises template, passing the feedback object
     return render_template(
         "exercises.html",
         part=part,
         question=exercise_data["question"],
         options=exercise_data.get("options"),
-        shape_image=exercise_data.get("shape_image")
+        shape_image=exercise_data.get("shape_image"),
+        staff_feedback=staff_feedback # <-- Passed the data to the template
     )
 
-
- 
 #--------------------Need to Know (students only)--------------------
 @main.route("/need_to_know")
 @login_required
@@ -738,6 +932,36 @@ def upload_medical_proof():
     return render_template("student/upload_medical_proof.html", form=form)
 
 
+#--------------------Student View Feedback (students only)--------------------
+@main.route("/student/feedback")
+@login_required
+def student_view_feedback():
+    # 1. Access Check (Ensure only a Student can access)
+    if not current_user.is_authenticated or not hasattr(current_user, 'is_student') or not current_user.is_student:
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for("main.home"))
+
+    # 2. Get Assigned Staff ID
+    # ASSUMPTION: The Student model (current_user) has an assigned_staff_id field.
+    assigned_staff_id = current_user.assigned_staff_id
+    
+    # Initialize the feedback list
+    feedback_list = []
+
+    if assigned_staff_id:
+        # 3. Fetch Feedback from the Assigned Staff Member ONLY
+        feedback_list = StaffFeedback.query.filter(
+            StaffFeedback.student_id == current_user.id,
+            StaffFeedback.staff_id == assigned_staff_id
+        ).order_by(StaffFeedback.timestamp.desc()).all()
+    else:
+        # Handle case where the student isn't assigned to anyone yet
+        flash("You are not currently assigned to a support staff member. Feedback will appear once an assignment is made.", "info")
+
+    return render_template("student/student_feedback.html", feedback_list=feedback_list)
+
+
+
 #--------------------Student Application Status--------------------
 @main.route("/student/application")
 @login_required
@@ -747,6 +971,15 @@ def student_application():
         return redirect(url_for("main.home"))
 
     return render_template("student/student_application.html", status=current_user.application_status)
+
+
+
+
+
+
+
+
+
 
 
 #--------------------Staff Dashboard--------------------
@@ -904,14 +1137,24 @@ def notification_settings():
 @main.route("/manage_staff", methods=["GET", "POST"])
 @login_required
 def manage_staff():
-    # Only allow admins
+    # Only allow admins to view this page
     if not getattr(current_user, "is_admin", False):
-        print("You are not authorized to view this page.", "danger")
+        # Use flash to show the user a message on the next page load
+        flash("You are not authorized to view this page.", "danger")
         return redirect(url_for("main.staff_dashboard"))
 
-    staff_list = Staff.query.all()  # Fetch all staff members
-    return render_template("/staff/manage_staff.html", staff_list=staff_list)
+    # Retrieve all staff members from the database with error handling
+    try:
+        # Ordering by surname for better presentation in the table
+        staff_list = Staff.query.order_by(Staff.surname).all()
+    except Exception as e:
+        # Handle database connection or query error gracefully
+        flash("A database error occurred while fetching staff data.", "error")
+        print(f"Database error during staff retrieval: {e}")
+        staff_list = [] # Ensure staff_list is defined even on error
 
+    # The HTML template (manage_staff.html) requires the staff_list
+    return render_template("/staff/manage_staff.html", staff_list=staff_list)
 
 
 #-------------------For adding new staff accounts (admin only)------------------
@@ -992,7 +1235,7 @@ def delete_staff(staff_id):
 
     staff_member = Staff.query.get_or_404(staff_id)
 
-    try: 
+    try:  
         db.session.delete(staff_member)
         db.session.commit()
         print("Staff deleted successfully!", "success")
@@ -1316,35 +1559,96 @@ def request_delete_student(student_id):
 @login_required
 def staff_view_student_surveys(student_id):
     if not isinstance(current_user, Staff):
-        print("Unauthorized access", "danger")
+        # Using print() here is usually incorrect for Flask flash messages. 
+        # You should use flash("Unauthorized access", "danger") if flash is available.
+        # Assuming flash is not setup here, keep redirect:
         return redirect(url_for("main.index"))
 
     student = Student.query.get_or_404(student_id)
     surveys = StudentSurvey.query.filter_by(student_id=student.id).all()
-
+    
+    # Data structure to hold counts for aggregation and graphing
+    aggregated_data = {}
+    
     import json
-    for survey in surveys: 
-        # convert from str to dict if needed 
-        if isinstance(survey.survey_data, str):
-            survey.survey_data = json.loads(survey.survey_data)
-        
-        # Convert numeric values to readable form
-        readable_data = {} 
-        for key, value in survey.survey_data.items():
-            if value == 1:
-                readable_data[key] = "Struggle"
-            else:
-                readable_data[key] = "No struggle"
-        survey.readable_data = readable_data  # attach new attribute for template
+    staff_view_records = []
 
-        # log staff view
+    for survey in surveys: 
+        # 1. Data Processing and Readable Conversion
+        if isinstance(survey.survey_data, str):
+            try:
+                survey_data = json.loads(survey.survey_data)
+            except json.JSONDecodeError:
+                # Handle corrupted data gracefully
+                survey_data = {}
+        else:
+            survey_data = survey.survey_data
+        
+        readable_data = {} 
+        for key, value in survey_data.items():
+            # Standardize key names (optional, but good practice for graphing)
+            standard_key = key.replace('_', ' ').title()
+            
+            # Count for aggregation
+            if standard_key not in aggregated_data:
+                aggregated_data[standard_key] = {'Struggle': 0, 'No struggle': 0}
+
+            if value == 1:
+                readable_data[standard_key] = "Struggle"
+                aggregated_data[standard_key]['Struggle'] += 1
+            else:
+                readable_data[standard_key] = "No struggle"
+                aggregated_data[standard_key]['No struggle'] += 1
+                
+        # Attach readable data to the survey object for detailed view
+        survey.readable_data = readable_data 
+        survey.date_display = survey.created_at.strftime('%Y-%m-%d %H:%M')
+
+        # 2. Log Staff View
         if not any(view.staff_id == current_user.id for view in survey.staff_views):
             view = StudentSurveyStaffView(staff_id=current_user.id, survey_id=survey.id)
-            db.session.add(view)
+            staff_view_records.append(view)
 
+    db.session.add_all(staff_view_records)
     db.session.commit()
-    return render_template("/staff/staff_view_surveys.html", student=student, surveys=surveys)
+    
+    # 3. Prepare data for Chart.js
+    chart_labels = list(aggregated_data.keys())
+    
+    # List of 'Struggle' counts matching the labels order
+    struggle_counts = [aggregated_data[key]['Struggle'] for key in chart_labels]
+    
+    # List of 'No struggle' counts matching the labels order
+    no_struggle_counts = [aggregated_data[key]['No struggle'] for key in chart_labels]
+    
+    # The final data object passed to the template
+    chart_data = {
+        'labels': chart_labels,
+        'datasets': [
+            {
+                'label': 'Students Reporting Struggle',
+                'data': struggle_counts,
+                'backgroundColor': 'rgba(239, 68, 68, 0.7)',  # Red
+                'borderColor': 'rgba(239, 68, 68, 1)',
+                'borderWidth': 1
+            },
+            {
+                'label': 'Students Reporting No Struggle',
+                'data': no_struggle_counts,
+                'backgroundColor': 'rgba(0, 208, 132, 0.7)', # Green
+                'borderColor': 'rgba(0, 208, 132, 1)',
+                'borderWidth': 1
+            }
+        ],
+        'total_surveys': len(surveys)
+    }
 
+    return render_template(
+        "/staff/staff_view_surveys.html", 
+        student=student, 
+        surveys=surveys, 
+        chart_data=json.dumps(chart_data) # Pass the data as a JSON string
+    )
  
  
  
@@ -1365,6 +1669,8 @@ def staff_view_student_exercises(student_id):
 
 
 #-------------------staff refer student to department-------------------
+# app/routes.py (or where refer_student_department is)
+
 @main.route("/staff/student/<int:student_id>/refer_department", methods=["GET", "POST"])
 @login_required
 def refer_student_department(student_id):
@@ -1393,8 +1699,8 @@ def refer_student_department(student_id):
         db.session.add(referral)
         db.session.commit()
 
-        # Pass the referral object, not strings
-        send_department_email(student, referral)
+        # UPDATED: Pass department string, referral object, and current_user's name
+        send_department_email(student, department, referral, current_user.name)
 
         flash(f"Student referred to {department} successfully.", "success")
         return redirect(url_for("main.staff_view_student_results", student_id=student.id))
@@ -1406,10 +1712,26 @@ def refer_student_department(student_id):
 @main.route("/staff/student/<int:student_id>/feedback", methods=["GET", "POST"])
 @login_required
 def staff_feedback(student_id):
-    # Ensure only staff can access
-    if not hasattr(current_user, "id") or not hasattr(current_user, "is_admin"):
-        flash("Unauthorized access.", "danger")
+    # --- ROLE CHECK: Ensure the user is authenticated and specifically a Staff member (not Admin) ---
+    # This check assumes:
+    # 1. current_user is either a Staff, Admin, or Student object.
+    # 2. Staff objects have an 'is_staff' attribute (True/False).
+    # 3. Admin objects have an 'is_admin' attribute (True/False).
+    
+    # Check 1: User must be authenticated
+    if not current_user.is_authenticated:
+        flash("Please log in to access this page.", "danger")
+        return redirect(url_for("main.login"))
+
+    # Check 2: User must be staff AND NOT an admin
+    # (Adjust this logic based on how your Staff and Admin models are differentiated)
+    is_authorized_staff = hasattr(current_user, 'is_staff') and current_user.is_staff
+    is_admin_user = hasattr(current_user, 'is_admin') and current_user.is_admin
+
+    if not is_authorized_staff or is_admin_user:
+        flash("Access denied. Only dedicated staff members can submit feedback.", "danger")
         return redirect(url_for("main.staff_dashboard"))
+    # ---------------------------------------------------------------------------------------------
 
     student = Student.query.get_or_404(student_id)
     form = StaffFeedbackForm()
@@ -1434,26 +1756,73 @@ def staff_feedback(student_id):
 
  
 #-------------------staff view individual student progress-------------------
+
 @main.route("/staff/student/<int:student_id>")
 @login_required
 def staff_view_student(student_id):
     student = Student.query.get_or_404(student_id)
     exercises = ExerciseCompletion.query.filter_by(student_id=student_id).all()
     tests = TestResult.query.filter_by(student_id=student_id).all()
-    surveys = StudentSurvey.query.filter_by(student_id=student_id).all()
     medical_proofs = MedicalProof.query.filter_by(student_id=student_id).all()
     referrals = StudentReferral.query.filter_by(student_id=student_id).all()
+    
+    # Fetch Surveys, ordered by newest first
+    surveys = StudentSurvey.query.filter_by(student_id=student_id).order_by(StudentSurvey.created_at.desc()).all()
+
+    # The value_map dictionary is no longer needed here as the template handles the logic.
+    
+    for survey in surveys:
+        try:
+            raw_data = survey.survey_data
+            
+            # 1. Parse JSON data if it's a string
+            if isinstance(raw_data, str):
+                data_dict = json.loads(raw_data)
+            else:
+                data_dict = raw_data
+            
+            # 2. FIX: Convert all dictionary values to integers for the Jinja comparison logic.
+            # This ensures 'value >= 4' works correctly in the template.
+            numeric_data = {}
+            for key, val in data_dict.items():
+                # Attempt to convert the value to an integer, handling potential string numbers
+                try:
+                    numeric_data[key] = int(val)
+                except (ValueError, TypeError):
+                    # Handle cases where the value isn't a valid number (e.g., unexpected data)
+                    numeric_data[key] = -1  # Assign a default non-struggle value or log error
+            
+            # Attach the numeric dictionary to survey using the existing attribute name
+            survey.readable_data = numeric_data
+
+        except (json.JSONDecodeError, AttributeError) as e:
+            # Handle major JSON parsing errors
+            survey.readable_data = {'Data Error': -1}
+            print(f"Error processing survey data for student {student_id}: {e}")
+
+    # Optionally: Build chart aggregation using the now-numeric data
+    chart_aggregation = {'Math': 0, 'Reading': 0, 'Other Skills': 0}
+    for survey in surveys:
+        data = survey.readable_data
+        # Note: We now check against the numeric threshold (>= 4) directly
+        if data.get('math_difficulty', 0) >= 4:
+            chart_aggregation['Math'] += 1
+        if data.get('reading_numbers', 0) >= 4:
+            chart_aggregation['Reading'] += 1
+        # Add other fields if needed
+    
+    chart_data_json = json.dumps(chart_aggregation)
 
     return render_template(
         "staff/student_progress.html",
         student=student,
         exercises=exercises,
         tests=tests,
-        surveys=surveys,
+        surveys=surveys,  # surveys now contain .readable_data with integer scores
         medical_proofs=medical_proofs,
-        referrals=referrals
+        referrals=referrals,
+        chart_data=chart_data_json
     )
-   
 
 
 @main.route("/generate_student_report/<int:student_id>", methods=["GET"])
@@ -1543,6 +1912,7 @@ def generate_student_report(student_id):
         return redirect(url_for("main.staff_dashboard"))
 
 
+
 #--------------------Student Study Material--------------------
 @main.route("/student/study_material")
 @login_required
@@ -1554,11 +1924,17 @@ def student_study_material():
     return render_template("student/study_material.html")
 
 
+#--------about--------
+@main.route("/about")
+def about():
+    return render_template("about.html")
+
+
 #--------------------Contact--------------------
 @main.route("/contact")
-@login_required
 def contact():
     return render_template("contact.html")
+
 
 #--------------------Logout--------------------
 @main.route("/logout")

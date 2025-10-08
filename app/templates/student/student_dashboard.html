@@ -3,206 +3,365 @@
 {% block title %}Student Dashboard{% endblock %}
 
 {% block content %}
-<!-- FontAwesome Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <div class="dashboard-wrapper" id="app-dashboard">
-  <!-- Sidebar -->
-  <div class="sidebar" id="sidebar">
-    <div class="logo">
-      <h1>Student Dashboard</h1>
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            <i class="fas fa-graduation-cap"></i>
+            <h1>Numeraid</h1>
+        </div>
+
+        <div class="sidebar-profile-compact">
+            <div class="avatar-circle">{{ student.name[0]|upper }}{{ student.surname[0]|upper }}</div>
+            <div class="profile-name">{{ student.name }} {{ student.surname }}</div>
+            <div class="profile-role">{{ student.course }}</div>
+        </div>
+        <hr class="sidebar-separator">
+
+        <ul class="nav-links">
+            <li>
+                <a href="#" class="active">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('main.contact') }}">
+                    <i class="fas fa-headset"></i>
+                    <span>Support</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('main.upload_medical_proof') }}">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Applications</span>
+                </a>
+            </li>
+            {% if assigned_staff_id %}
+            <li>
+                <a href="{{ url_for('main.conversation', student_id=student.id, staff_id=assigned_staff_id) }}">
+                    <i class="fas fa-comments"></i>
+                    <span>Messages</span>
+                    <span class="badge-notification">3</span>
+                </a>
+            </li>
+            {% else %}
+            <li>
+                <span class="nav-link disabled-link" title="No staff assigned">
+                    <i class="fas fa-comments"></i>
+                    <span>Messages</span>
+                </span>
+            </li>
+            {% endif %}
+            <li>
+                <a href="{{ url_for('main.need_to_know') }}">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Need to Know</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('main.student_settings') }}">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="logout-container">
+            <button class="logout-btn" id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
     </div>
 
-    <div class="sidebar-profile-compact text-center px-3 mb-3">
-      <div class="avatar-circle">{{ student.name[0]|upper }}{{ student.surname[0]|upper }}</div>
-      <div class="small text-muted">Manage Profile</div>
+    <div class="main-content" id="main-content">
+        <nav class="top-nav">
+            <div class="hamburger" id="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+            
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search dashboard..." id="dashboard-search">
+            </div>
+
+            <div class="nav-actions">
+                <button class="nav-icon-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <!-- <span class="notification-badge"></span> -->
+                </button>
+                <div class="user-menu">
+                    <div class="user-avatar">
+                        {% if student.profile_image %}
+                            <img src="{{ url_for('main.uploaded_file', filename='profile_images/' + student.profile_image) }}" alt="Profile">
+                        {% else %}
+                            <img src="https://static.vecteezy.com/system/resources/previews/047/733/682/non_2x/grey-avatar-icon-user-avatar-photo-icon-social-media-user-icon-vector.jpg" alt="Profile">
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="welcome-banner">
+            <div class="welcome-content">
+                <div class="welcome-text">
+                    <h1>Welcome back, {{ student.name }}! 👋</h1>
+                    <p>Ready to continue your learning journey? Let's make today count.</p>
+                </div>
+                <div class="welcome-stats">
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ student_results.numbers_score + student_results.logic_score + student_results.shapes_score if student_results else 0 }}/15</div>
+                            <div class="stat-label">Test Score</div>
+                        </div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ student.exercises_completed|length }}</div>
+                            <div class="stat-label">Exercises Done</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="welcome-illustration">
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#4B68A5" d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.6,90,-16.3,88.5,-0.9C87,14.6,81.4,29.2,73.1,42.8C64.8,56.4,53.8,69,39.8,76.8C25.8,84.6,8.8,87.6,-7.3,87.2C-23.4,86.8,-38.8,83,-52.6,75.8C-66.4,68.6,-78.6,58,-84.4,44.8C-90.2,31.6,-89.6,15.8,-86.9,1.2C-84.2,-13.4,-79.4,-26.8,-72.1,-39.2C-64.8,-51.6,-55,-63,-42.8,-70C-30.6,-77,-15.3,-79.5,0.5,-80.3C16.3,-81.1,32.6,-80.2,44.7,-76.4Z" transform="translate(100 100)" />
+                </svg>
+            </div>
+        </div>
+
+        {% if assigned_staff %}
+        <section class="staff-guidance-section">
+            <div class="guidance-card">
+                {% if staff_feedback %}
+                <div class="guidance-header feedback-present">
+                    <i class="fas fa-bullhorn guidance-icon"></i>
+                    <div class="guidance-text-wrapper">
+                        <h2>Guidance from Your Staff Member ({{ assigned_staff.name }} {{ assigned_staff.surname }})</h2>
+                        <p class="timestamp">Last updated: {{ staff_feedback.created_at.strftime('%b %d, %Y') }}</p>
+                    </div>
+                </div>
+                <div class="guidance-body">
+                    <p>{{ staff_feedback.feedback_text }}</p>
+
+                    {% if staff_feedback.progress_notes %}
+                    <details class="notes-details">
+                        <summary>View Progress Notes/Tips</summary>
+                        <p class="notes-content">{{ staff_feedback.progress_notes }}</p>
+                    </details>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="guidance-header feedback-absent">
+                    <i class="fas fa-hand-peace guidance-icon"></i>
+                    <div class="guidance-text-wrapper">
+                        <h2>No Recent Guidance</h2>
+                        <p class="timestamp">Staff Member: {{ assigned_staff.name }} {{ assigned_staff.surname }}</p>
+                    </div>
+                </div>
+                <div class="guidance-body">
+                    <p>Your assigned staff member hasn't posted a recent note. Keep working hard and they'll check in soon!</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+        
+        <section class="quick-actions">
+            {% if student_results %}
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="action-grid">
+                <div class="action-card card-gradient-1">
+                    <div class="action-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>Review Test</h3>
+                    <p>Re-assess your abilities or review your latest scores.</p>
+                    <a href="{{ url_for('main.test_part', part='numbers', difficulty='easy', q_num=1) }}" class="action-btn">
+                        Start Review <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="action-card card-gradient-2">
+                    <div class="action-icon">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
+                    <h3>Practice</h3>
+                    <p>Sharpen your skills daily with targeted exercises.</p>
+                    <a href="{{ url_for('main.exercises', part='numbers') }}" class="action-btn">
+                        Practice Now <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="action-card card-gradient-3">
+                    <div class="action-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>View Results</h3>
+                    <p>Track your progress across all categories.</p>
+                    <a href="{{ url_for('main.test_results') }}" class="action-btn">
+                        View Results <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="action-card card-gradient-4">
+                    <div class="action-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h3>Study Materials</h3>
+                    <p>Access recommended learning resources and videos.</p>
+                    <a href="{{ url_for('main.student_study_material') }}" class="action-btn">
+                        Explore <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <h2 class="section-title">Your First Step: Take the Assessment Test</h2>
+            <div class="action-grid">
+                <div class="action-card card-gradient-1" style="grid-column: 1 / -1; max-width: 500px; margin: 0 auto;">
+                    <div class="action-icon"><i class="fas fa-brain"></i></div>
+                    <h3>Start Personalization</h3>
+                    <p>You must complete the **Initial Assessment Test** before you can access practice exercises and personalized materials.</p>
+                    <a href="{{ url_for('main.test_part', part='numbers', difficulty='easy', q_num=1) }}" class="action-btn">
+                        Start Test Now <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="progress-section">
+            {% if student_results %}
+            <div class="progress-card">
+                <h2 class="section-title">Your Learning Journey</h2>
+                <div class="progress-content">
+                    <div class="progress-item">
+                        <div class="progress-header">
+                            <span class="progress-label">Numbers Skills</span>
+                            <span class="progress-percentage">{{ ((student_results.numbers_score / 5) * 100)|int if student_results else 0 }}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: {{ ((student_results.numbers_score / 5) * 100)|int if student_results else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-item">
+                        <div class="progress-header">
+                            <span class="progress-label">Logic Reasoning</span>
+                            <span class="progress-percentage">{{ ((student_results.logic_score / 5) * 100)|int if student_results else 0 }}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill progress-bar-logic" style="width: {{ ((student_results.logic_score / 5) * 100)|int if student_results else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-item">
+                        <div class="progress-header">
+                            <span class="progress-label">Spatial Awareness</span>
+                            <span class="progress-percentage">{{ ((student_results.shapes_score / 5) * 100)|int if student_results else 0 }}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill progress-bar-shapes" style="width: {{ ((student_results.shapes_score / 5) * 100)|int if student_results else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="progress-card">
+                <h2 class="section-title">Your Learning Journey</h2>
+                <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 0.5rem; color: #a0aec0;"></i>
+                    <p>Complete the **Initial Assessment Test** to unlock your personalized progress tracking and skill analysis charts here.</p>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="inspiration-section">
+            <h2 class="section-title">Daily Inspiration</h2>
+            <div class="inspiration-carousel">
+                <button class="carousel-btn prev-btn" id="prevBtn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="inspiration-track">
+                    <div class="inspiration-card">
+                        <div class="inspiration-image">
+                            <img src="https://i.pinimg.com/1200x/e6/f1/c0/e6f1c0568c0d77f75c3450f9da15a820.jpg" alt="Motivation">
+                        </div>
+                        <div class="inspiration-content">
+                            <i class="fas fa-quote-left quote-icon"></i>
+                            <p class="inspiration-quote">"Your learning difference is your superpower. It allows you to see the world in ways others can't."</p>
+                        </div>
+                    </div>
+                    
+                    <div class="inspiration-card">
+                        <div class="inspiration-image">
+                            <img src="https://i.pinimg.com/736x/fa/86/22/fa8622eb54b2f0a262ccebee6fdf195a.jpg" alt="Progress">
+                        </div>
+                        <div class="inspiration-content">
+                            <i class="fas fa-quote-left quote-icon"></i>
+                            <p class="inspiration-quote">"Progress is progress, no matter how small. Every step forward is a victory worth celebrating."</p>
+                        </div>
+                    </div>
+                    
+                    <div class="inspiration-card">
+                        <div class="inspiration-image">
+                            <img src="https://i.pinimg.com/1200x/2b/2e/a7/2b2ea7d85d2b6c96947497e9b8aba39b.jpg" alt="Innovation">
+                        </div>
+                        <div class="inspiration-content">
+                            <i class="fas fa-quote-left quote-icon"></i>
+                            <p class="inspiration-quote">"Different thinking leads to innovative solutions. Your unique perspective is valuable."</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-btn next-btn" id="nextBtn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="carousel-indicators">
+                <span class="indicator active" data-slide="0"></span>
+                <span class="indicator" data-slide="1"></span>
+                <span class="indicator" data-slide="2"></span>
+            </div>
+        </section>
     </div>
-    <hr class="sidebar-separator">
-
-    <ul class="nav-links">
-      <li>
-        <a href="#" class="active">
-          <i class="fas fa-home"></i>
-          <span>Dashboard</span>
-        </a>
-      </li>
-      <li>
-        <a href="{{ url_for('main.contact') }}">
-          <i class="fas fa-headset"></i>
-          <span>Contact Support</span>
-        </a>
-      </li>
-      <li>
-        <a href="{{ url_for('main.student_application') }}">
-          <i class="fas fa-th"></i>
-          <span>Applications</span>
-        </a>
-      </li>
-      {% if assigned_staff_id %}
-      <li>
-        <a href="{{ url_for('main.conversation', student_id=student.id, staff_id=assigned_staff_id) }}">
-          <i class="fas fa-envelope"></i>
-          <span>Messages</span>
-        </a>
-      </li>
-      {% else %}
-      <li>
-        <span class="nav-link disabled-link" title="No staff assigned">
-          <i class="fas fa-envelope"></i>
-          <span>Messages (No staff)</span>
-        </span>
-      </li>
-      {% endif %}
-      <li>
-        <a href="{{ url_for('main.need_to_know') }}">
-          <i class="fas fa-info-circle"></i>
-          <span>Need to Know</span>
-        </a>
-      </li>
-      <li>
-        <a href="{{ url_for('main.student_settings') }}">
-          <i class="fas fa-cog"></i>
-          <span>Settings</span>
-        </a>
-      </li>
-    </ul>
-
-    <div class="logout-container">
-      <button class="logout-btn" id="logout-btn">
-        <i class="fas fa-sign-out-alt"></i>
-        <span>Logout</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Main Content -->
-  <div class="main-content" id="main-content">
-    <!-- Header with Hamburger -->
-    <div class="mb-3 d-flex align-items-center">
-      <div class="hamburger" id="hamburger">
-        <i class="fas fa-bars"></i>
-        <span class="hamburger-fallback">☰</span>
-      </div>
-    </div>
-
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div class="d-flex align-items-center">
-        <div class="user-icon me-3">
-          {% if student.profile_image %}
-            <img src="{{ url_for('main.uploaded_file', filename='profile_images/' + student.profile_image) }}" alt="User Icon">
-          {% else %}
-            <img src="https://static.vecteezy.com/system/resources/previews/047/733/682/non_2x/grey-avatar-icon-user-avatar-photo-icon-social-media-user-icon-vector.jpg" alt="User Icon">
-          {% endif %}
-        </div>
-        <div>
-          <h2>{{ student.name }} {{ student.surname }}</h2>
-          <div class="small text-muted">{{ student.course }} (Year {{ student.year_of_study }}) • {{ student.faculty }}</div>
-        </div>
-      </div>
-      <div class="input-group" style="max-width:300px;">
-        <span class="input-group-text"><i class="fas fa-search"></i></span>
-        <input type="text" class="form-control" placeholder="Search dashboard..." id="dashboard-search">
-      </div>
-    </div>
-
-    <!-- Welcome Section -->
-    <section class="welcome-section">
-      <h1>Welcome {{ student.name }} {{ student.surname }}</h1>
-      <div class="bg-white-25 p-3 rounded mt-3 text-white">
-        <p>Numeraid helps students test for dyscalculia and provides tools and practice to improve their numerical learning skills.</p>
-      </div>
-    </section>
-
-    <!-- Dashboard Cards -->
-    <div class="row g-4 mb-4" id="dashboard-cards">
-      <div class="col-lg-3 col-md-6 col-6 dashboard-card-wrapper">
-        <div class="card dashboard-card p-3">
-          <div class="card-icon"><i class="fas fa-chart-line"></i></div>
-          <h5>Results</h5>
-          <p>View your progress and performance metrics</p>
-          <a href="{{ url_for('main.test_results') }}" class="btn btn-sm btn-outline-primary">View</a>
-        </div>
-      </div>
-      <div class="col-lg-3 col-md-6 col-6 dashboard-card-wrapper">
-        <div class="card dashboard-card p-3">
-          <div class="card-icon"><i class="fas fa-brain"></i></div>
-          <h5>Tests for Dyscalculia</h5>
-          <p>Assess your numerical learning abilities</p>
-          <a href="{{ url_for('main.test_part', part='numbers', difficulty='easy', q_num=1) }}" class="btn btn-sm btn-outline-primary">Start Test</a>
-        </div>
-      </div>
-      <div class="col-lg-3 col-md-6 col-6 dashboard-card-wrapper">
-        <div class="card dashboard-card p-3">
-          <div class="card-icon"><i class="fas fa-book"></i></div>
-          <h5>Study Material</h5>
-          <p>Access lecture notes, guides, and resources</p>
-          <a href="{{ url_for('main.student_study_material') }}" class="btn btn-sm btn-outline-primary">Open</a>
-        </div>
-      </div>
-      <div class="col-lg-3 col-md-6 col-6 dashboard-card-wrapper">
-        <div class="card dashboard-card p-3">
-          <div class="card-icon"><i class="fas fa-clipboard-check"></i></div>
-          <h5>Practice Tests</h5>
-          <p>Test your knowledge with practice exams</p>
-          <a href="{{ url_for('main.exercises', part='numbers') }}" class="btn btn-sm btn-outline-primary">Practice</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Motivation Section -->
-    <section class="motivation-section">
-      <h2>Daily Motivation</h2>
-      <div class="motivation-slider">
-        <div class="motivation-slide">
-          <div class="motivation-image">
-            <img src="https://i.pinimg.com/1200x/e6/f1/c0/e6f1c0568c0d77f75c3450f9da15a820.jpg" alt="Motivation 1">
-          </div>
-          <p class="motivation-text">"Your learning difference is your superpower. It allows you to see the world in ways others can't."</p>
-        </div>
-        <div class="motivation-slide">
-          <div class="motivation-image">
-            <img src="https://i.pinimg.com/736x/fa/86/22/fa8622eb54b2f0a262ccebee6fdf195a.jpg" alt="Progress Motivation">
-          </div>
-          <p class="motivation-text">"Progress is progress, no matter how small. Every step forward is a victory worth celebrating."</p>
-        </div>
-        <div class="motivation-slide">
-          <div class="motivation-image">
-            <img src="https://i.pinimg.com/1200x/2b/2e/a7/2b2ea7d85d2b6c96947497e9b8aba39b.jpg" alt="Different Thinking">
-          </div>
-          <p class="motivation-text">"Different thinking leads to innovative solutions. Your unique perspective is valuable."</p>
-        </div>
-      </div>
-      <div class="d-flex justify-content-center mt-3">
-        <div class="slider-dot active" data-index="0"></div>
-        <div class="slider-dot" data-index="1"></div>
-        <div class="slider-dot" data-index="2"></div>
-      </div>
-    </section>
-  </div>
 </div>
 
 <style>
 :root {
-    --color-blue: #4B68A5;
+    --primary-blue: #4B68A5;
+    --primary-dark: #3A528F;
+    --primary-light: #6B88C5;
     --white: #ffffff;
-    --primary-blue: var(--color-blue);
-    --light-blue: rgba(75, 104, 165, 0.08);
-    --light-gray: #f5f5f5;
-    --medium-gray: #e0e0e0;
-    --dark-gray: #333333;
-    --text-gray: #5f6368;
-    --shadow: 0 2px 12px rgba(0,0,0,0.06);
-    --transition: all 0.3s ease;
+    --light-bg: #f8f9fc;
+    --light-gray: #f5f7fa;
+    --medium-gray: #e0e4e9;
+    --dark-gray: #2c3e50;
+    --text-primary: #2d3748;
+    --text-secondary: #718096;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius: 16px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    background-color: var(--light-gray);
-    color: var(--dark-gray);
+    background-color: var(--light-bg);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
     line-height: 1.6;
-    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    margin: 0;
-    padding: 0;
 }
 
 .dashboard-wrapper {
@@ -210,10 +369,10 @@ body {
     min-height: 100vh;
 }
 
-/* Sidebar */
+/* ===== SIDEBAR ===== */
 .sidebar {
-    width: 250px;
-    background-color: var(--primary-blue);
+    width: 280px;
+    background: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
     color: var(--white);
     display: flex;
     flex-direction: column;
@@ -221,355 +380,995 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    padding: 1.5rem 0;
+    padding: 2rem 0;
     transition: transform 0.3s ease;
-    z-index: 999;
+    z-index: 1000;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-.sidebar.collapsed { 
-    transform: translateX(-100%); 
+/* Custom Scrollbar for Sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
 }
 
-.logo h1 { 
-    color: var(--white); 
-    font-size: 1.5rem; 
-    padding-left: 1rem; 
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0 2rem 1.5rem;
+}
+
+.logo i {
+    font-size: 2rem;
+    color: var(--white);
+}
+
+.logo h1 {
+    color: var(--white);
+    font-size: 1.75rem;
+    font-weight: 700;
     margin: 0;
 }
 
-.sidebar-profile-compact .avatar-circle {
-    width: 64px; 
-    height: 64px; 
-    border-radius: 50%; 
-    background: rgba(255,255,255,0.12);
-    display: inline-flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-weight: 700; 
-    font-size: 1.2rem; 
-    color: #fff;
-    margin-bottom: 0.5rem;
+.sidebar-profile-compact {
+    text-align: center;
+    padding: 1rem 2rem;
+    margin-bottom: 1rem;
+}
+
+.avatar-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+    border: 3px solid rgba(255,255,255,0.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.profile-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 0.25rem;
+}
+
+.profile-role {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.75);
 }
 
 .sidebar-separator {
-    border-color: rgba(255,255,255,0.2);
-    margin: 1rem 1.5rem;
+    border-color: rgba(255,255,255,0.15);
+    margin: 0 1.5rem 1rem;
 }
 
-.nav-links { 
-    list-style: none; 
-    padding-left: 0; 
-    flex-grow: 1; 
+.nav-links {
+    list-style: none;
+    padding: 0 1rem;
+    flex-grow: 1;
     margin: 0;
 }
 
-.nav-links li { 
-    margin-bottom: 0.5rem; 
+.nav-links li {
+    margin-bottom: 0.5rem;
 }
 
 .nav-links a {
     display: flex;
     align-items: center;
-    padding: 0.8rem 1.5rem;
-    color: var(--white);
+    padding: 1rem 1.25rem;
+    color: rgba(255,255,255,0.85);
     text-decoration: none;
+    border-radius: 12px;
     transition: var(--transition);
+    position: relative;
 }
 
-.nav-links a:hover, 
-.nav-links a.active {
-    background-color: rgba(255,255,255,0.08);
-    border-left: 4px solid var(--white);
+.nav-links a:hover {
+    background-color: rgba(255,255,255,0.1);
     color: var(--white);
-    text-decoration: none;
+    transform: translateX(4px);
 }
 
-.nav-links i { 
-    margin-right: 1rem; 
-    width: 20px; 
-    text-align: center; 
+.nav-links a.active {
+    background-color: rgba(255,255,255,0.15);
+    color: var(--white);
+    font-weight: 600;
 }
 
-.disabled-link { 
+.nav-links i {
+    margin-right: 1rem;
+    width: 24px;
+    text-align: center;
+    font-size: 1.15rem;
+}
+
+.badge-notification {
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    margin-left: auto;
+    font-weight: 600;
+}
+
+.disabled-link {
     display: flex;
     align-items: center;
-    padding: 0.8rem 1.5rem;
-    color: rgba(255,255,255,0.6);
+    padding: 1rem 1.25rem;
+    color: rgba(255,255,255,0.4);
     cursor: not-allowed;
+    border-radius: 12px;
 }
 
-/* Logout Button */
-.logout-container { 
-    margin-top: auto; 
-    padding: 1.5rem; 
+.logout-container {
+    margin-top: auto;
+    padding: 1.5rem 1rem;
 }
 
 .logout-btn {
     display: flex;
     align-items: center;
+    justify-content: center;
     width: 100%;
-    padding: 0.8rem;
-    background-color: #3A528F;
-    border: none;
+    padding: 1rem;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
     color: var(--white);
     border-radius: 12px;
     cursor: pointer;
-    justify-content: center;
     transition: var(--transition);
     font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
-.logout-btn:hover { 
-    background-color: #2D3E75; 
+.logout-btn:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
 }
 
-.logout-btn i { 
-    margin-right: 0.5rem; 
+.logout-btn i {
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
 }
 
-/* Main Content */
-.main-content { 
-    margin-left: 250px; 
-    padding: 1.5rem; 
-    transition: margin-left 0.3s ease; 
+/* ===== MAIN CONTENT ===== */
+.main-content {
+    margin-left: 280px;
+    padding: 0;
+    transition: margin-left 0.3s ease;
     flex: 1;
     min-height: 100vh;
+    background-color: var(--light-bg);
 }
 
-.main-content.full-width { 
-    margin-left: 0; 
+.main-content.full-width {
+    margin-left: 0;
 }
 
-.user-icon img { 
-    width: 50px; 
-    height: 50px; 
-    border-radius: 50%; 
-    object-fit: cover; 
+/* ===== TOP NAV ===== */
+.top-nav {
+    background: var(--white);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-/* Hamburger Button */
 .hamburger {
-    display: block !important;
-    width: 40px;
-    height: 40px;
-    background: var(--primary-blue);
-    color: var(--white);
+    width: 44px;
+    height: 44px;
+    background: var(--light-gray);
+    color: var(--primary-blue);
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: var(--transition);
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
+    transition: var(--transition);
+    font-size: 1.25rem;
 }
 
 .hamburger:hover {
-    background: #3a5588;
-    transform: scale(1.05);
-}
-
-.hamburger .fas {
+    background: var(--primary-light);
     color: var(--white);
 }
 
-.hamburger-fallback {
-    display: none;
+.search-box {
+    flex: 1;
+    max-width: 500px;
+    position: relative;
 }
 
-/* Sidebar Icons */
-.nav-links i {
-    margin-right: 1rem;
-    width: 20px;
-    text-align: center;
-    color: var(--white);
-    font-size: 1.1rem;
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 1rem;
 }
 
-@media (max-width: 992px) {
-    .main-content { margin-left: 0; }
-    .sidebar { transform: translateX(-100%); }
-    .sidebar.show { transform: translateX(0); }
-}
-
-/* Welcome Section */
-.welcome-section {
-    background-color: var(--primary-blue);
-    color: var(--white);
-    padding: 2rem;
+.search-box input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 3rem;
+    border: 2px solid var(--medium-gray);
     border-radius: 12px;
+    font-size: 0.95rem;
+    transition: var(--transition);
+    background: var(--light-gray);
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(75, 104, 165, 0.1);
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.nav-icon-btn {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    background: var(--light-gray);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    color: var(--text-secondary);
+}
+
+.nav-icon-btn:hover {
+    background: var(--medium-gray);
+    color: var(--primary-blue);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.user-avatar img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--medium-gray);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.user-avatar img:hover {
+    border-color: var(--primary-blue);
+}
+
+/* ===== WELCOME BANNER ===== */
+.welcome-banner {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+    padding: 3rem 2rem;
+    margin: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.welcome-content {
+    flex: 1;
+    z-index: 1;
+}
+
+.welcome-text h1 {
+    color: var(--white);
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.welcome-text p {
+    color: rgba(255,255,255,0.9);
+    font-size: 1.1rem;
     margin-bottom: 2rem;
-    box-shadow: var(--shadow);
 }
 
-.welcome-section h1 {
-    margin: 0 0 1rem 0;
-    font-size: 2rem;
+.welcome-stats {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
 }
 
-.bg-white-25 {
-    background-color: rgba(255,255,255,0.25);
+.stat-item {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
 }
 
-/* Dashboard Cards */
-.dashboard-card { 
-    border-top: 4px solid var(--primary-blue); 
-    transition: var(--transition); 
-    cursor: pointer; 
-    text-align: center; 
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.5rem;
 }
 
-.dashboard-card:hover { 
-    transform: translateY(-5px); 
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
+.stat-value {
+    color: var(--white);
+    font-size: 1.75rem;
+    font-weight: 700;
 }
 
-.card-icon { 
-    font-size: 2.5rem; 
-    margin-bottom: 1rem; 
-    color: var(--primary-blue); 
+.stat-label {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.9rem;
 }
 
-/* Motivation Section */
-.motivation-section { 
-    background-color: var(--white); 
-    border-radius: 12px; 
-    padding: 1.5rem; 
-    box-shadow: var(--shadow); 
-    overflow: hidden; 
+.stat-divider {
+    width: 1px;
+    height: 50px;
+    background: rgba(255,255,255,0.2);
 }
 
-.motivation-section h2 { 
-    color: var(--primary-blue); 
-    text-align: center; 
-    margin-bottom: 1.5rem; 
+.welcome-illustration {
+    width: 200px;
+    height: 200px;
+    opacity: 0.3;
 }
 
-.motivation-slider { 
-    display: flex; 
-    transition: transform 0.5s ease; 
+.welcome-illustration svg {
+    width: 100%;
+    height: 100%;
 }
 
-.motivation-slide { 
-    min-width: 100%; 
-    padding: 1rem; 
-    text-align: center; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
+/* ===== STAFF GUIDANCE SECTION (NEW) ===== */
+.staff-guidance-section {
+    padding: 0 2rem;
+    margin-bottom: 2rem;
 }
 
-.motivation-image { 
-    width: 100%; 
-    max-width: 600px; 
-    height: 300px; 
-    border-radius: 12px; 
-    margin-bottom: 1rem; 
-    overflow: hidden; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+.guidance-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    border: 1px solid var(--medium-gray);
 }
 
-.motivation-image img { 
-    width: 100%; 
-    height: 100%; 
-    object-fit: cover; 
-    object-position: center; 
+.guidance-header {
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
-.motivation-text { 
-    font-style: italic; 
-    color: var(--text-gray); 
-    max-width: 600px; 
+.feedback-present {
+    background: linear-gradient(90deg, #e6f6ff, #d0e9ff); /* Light blue background */
+    border-bottom: 2px solid var(--primary-light);
+}
+
+.feedback-absent {
+    background: var(--light-gray);
+    border-bottom: 2px solid var(--medium-gray);
+}
+
+.guidance-icon {
+    font-size: 1.75rem;
+    color: var(--primary-dark);
+}
+
+.guidance-header h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary-dark);
     margin: 0;
+}
+
+.guidance-header .timestamp {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.guidance-body {
+    padding: 1.5rem 2rem;
+    color: var(--text-primary);
+}
+
+.guidance-body p {
+    margin-bottom: 1rem;
+}
+
+.notes-details {
+    margin-top: 1rem;
+    border-left: 4px solid var(--primary-light);
+    padding-left: 1rem;
+    background: #fcfcfc;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.notes-details summary {
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--primary-dark);
+    list-style: none; /* Hide default arrow */
+}
+
+.notes-details summary::before {
+    content: "\f054"; /* FontAwesome angle-right icon */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-right: 0.5rem;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+.notes-details[open] summary::before {
+    content: "\f078"; /* FontAwesome angle-down icon */
+    transform: rotate(90deg);
+}
+
+.notes-content {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--medium-gray);
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+
+/* ===== QUICK ACTIONS ===== */
+.quick-actions {
+    padding: 2rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.action-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+}
+
+.card-gradient-1::before { background: linear-gradient(90deg, #4B68A5, #6B88C5); }
+.card-gradient-2::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.card-gradient-3::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.card-gradient-4::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+.action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-light);
+}
+
+.action-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-light));
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: var(--white);
+    margin-bottom: 1.25rem;
+}
+
+.card-gradient-2 .action-icon { background: linear-gradient(135deg, #10b981, #34d399); }
+.card-gradient-3 .action-icon { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+.card-gradient-4 .action-icon { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+
+.action-card h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.action-card p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: var(--transition);
+}
+
+.action-btn:hover {
+    gap: 0.75rem;
+    color: var(--primary-dark);
+}
+
+/* ===== PROGRESS SECTION ===== */
+.progress-section {
+    padding: 0 2rem 2rem;
+}
+
+.progress-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.progress-item {
+    margin-bottom: 2rem;
+}
+
+.progress-item:last-child {
+    margin-bottom: 0;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.progress-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.progress-percentage {
+    font-weight: 700;
+    color: var(--primary-blue);
     font-size: 1.1rem;
 }
 
-.slider-dot { 
-    width: 12px; 
-    height: 12px; 
-    border-radius: 50%; 
-    background-color: var(--medium-gray); 
-    margin: 0 5px; 
-    cursor: pointer; 
-    transition: var(--transition); 
+.progress-bar-container {
+    height: 12px;
+    background: var(--light-gray);
+    border-radius: 10px;
+    overflow: hidden;
 }
 
-.slider-dot.active { 
-    background-color: var(--primary-blue); 
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-blue), var(--primary-light));
+    border-radius: 10px;
+    transition: width 1s ease;
 }
 
-/* Responsive Design */
-@media (max-width: 992px) { 
-    .col-lg-3 { flex: 0 0 50%; max-width: 50%; } 
+.progress-bar-logic {
+    background: linear-gradient(90deg, #10b981, #34d399);
 }
 
-@media (max-width: 576px) { 
-    .col-lg-3 { flex: 0 0 100%; max-width: 100%; } 
-    .main-content { padding: 1rem; }
+.progress-bar-shapes {
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+}
+
+
+/* ===== INSPIRATION SECTION (Carousel) ===== */
+.inspiration-section {
+    padding: 0 2rem 4rem;
+}
+
+.inspiration-carousel {
+    position: relative;
+    overflow: hidden;
+    padding: 0 4rem; /* Space for buttons */
+}
+
+.inspiration-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+}
+
+.inspiration-card {
+    min-width: 100%; /* Each card takes full width of the viewable area */
+    box-sizing: border-box;
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    overflow: hidden;
+    border: 1px solid var(--medium-gray);
+}
+
+.inspiration-image {
+    flex: 0 0 40%;
+    max-width: 40%;
+    height: 300px;
+}
+
+.inspiration-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.inspiration-content {
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+.quote-icon {
+    color: var(--primary-blue);
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.inspiration-quote {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--dark-gray);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(75, 104, 165, 0.9);
+    color: var(--white);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    transition: var(--transition);
+    font-size: 1rem;
+}
+
+.carousel-btn:hover {
+    background: var(--primary-dark);
+}
+
+.prev-btn {
+    left: 0;
+}
+
+.next-btn {
+    right: 0;
+}
+
+.carousel-indicators {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: var(--medium-gray);
+    border-radius: 50%;
+    margin: 0 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.indicator.active {
+    background-color: var(--primary-blue);
+    width: 25px;
+    border-radius: 5px;
+}
+
+/* ===== MEDIA QUERIES (Responsiveness) ===== */
+
+@media (max-width: 1200px) {
+    .welcome-text h1 {
+        font-size: 1.75rem;
+    }
+    .welcome-text p {
+        font-size: 1rem;
+    }
+    .welcome-illustration {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+@media (max-width: 1024px) {
+    /* Main layout adjustment for smaller screens */
+    .sidebar {
+        transform: translateX(0); /* Default position */
+    }
+    
+    .sidebar.collapsed {
+        transform: translateX(-280px); /* Hide completely when collapsed */
+    }
+
+    .main-content {
+        margin-left: 280px;
+        width: calc(100% - 280px);
+    }
+    
+    .main-content.full-width {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .hamburger {
+        display: flex; /* Ensure hamburger is visible on smaller screens */
+    }
+    
+    .welcome-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 2rem;
+    }
+
+    .welcome-illustration {
+        display: none; /* Hide complex illustration on smaller screens */
+    }
+    
+    .inspiration-card {
+        flex-direction: column;
+    }
+    
+    .inspiration-image {
+        flex: 1 1 100%;
+        max-width: 100%;
+        height: 200px;
+    }
+
+    .inspiration-content {
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .quote-icon {
+        display: none; /* Less clutter in vertical layout */
+    }
+
+    .inspiration-quote {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0; /* Always full width on mobile */
+    }
+    
+    .sidebar {
+        transform: translateX(-280px);
+    }
+    
+    .sidebar.visible {
+        transform: translateX(0);
+    }
+    
+    .top-nav {
+        padding: 1rem;
+    }
+    
+    .search-box {
+        display: none; /* Hide search box on very small screens for space */
+    }
+    
+    .welcome-banner, .quick-actions, .progress-section, .inspiration-section {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+
+    .staff-guidance-section {
+        margin: 1rem 1rem 2rem 1rem;
+        padding: 0;
+    }
+    
+    .guidance-header {
+        padding: 1rem 1.5rem;
+    }
+    
+    .guidance-body {
+        padding: 1.5rem;
+    }
+    
+    .stat-divider {
+        display: none;
+    }
+    
+    .welcome-stats {
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+    }
+    
+    .stat-item {
+        width: 100%;
+        justify-content: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px dashed rgba(255,255,255,0.2);
+    }
+    
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+    
+    .inspiration-carousel {
+        padding: 0 1rem;
+    }
+    
+    .carousel-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+    
+    .prev-btn { left: -10px; }
+    .next-btn { right: -10px; }
 }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Hamburger toggle
-const sidebar = document.getElementById('sidebar');
-const mainContent = document.getElementById('main-content');
-const hamburger = document.getElementById('hamburger');
-hamburger.addEventListener('click', () => {
-    sidebar.classList.toggle('collapsed');
-    mainContent.classList.toggle('full-width');
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    const hamburger = document.getElementById('hamburger');
+    const logoutBtn = document.getElementById('logout-btn');
 
-// Motivation slider
-const slider = document.querySelector('.motivation-slider');
-const dots = document.querySelectorAll('.slider-dot');
-let currentSlide = 0;
-const slideCount = document.querySelectorAll('.motivation-slide').length;
-function showSlide(index) {
-    if(index < 0) index = slideCount - 1;
-    if(index >= slideCount) index = 0;
-    slider.style.transform = `translateX(-${index * 100}%)`;
-    dots.forEach(dot => dot.classList.remove('active'));
-    dots[index].classList.add('active');
-    currentSlide = index;
-}
-dots.forEach(dot => {
-    dot.addEventListener('click', () => showSlide(parseInt(dot.getAttribute('data-index'))));
-});
-setInterval(() => showSlide(currentSlide + 1), 5000);
-
-// Logout
-document.querySelector('.logout-btn').addEventListener('click', () => {
-    if(confirm('Are you sure you want to logout?')) {
-        window.location.href = "{{ url_for('main.logout') }}";
-    }
-});
-
-// Sidebar active link
-document.querySelectorAll('.nav-links a').forEach(link => {
-    link.addEventListener('click', function(e) {
-        // Only prevent default for anchor links
-        if (this.getAttribute('href') === '#') {
-            e.preventDefault();
+    // --- Sidebar Toggle ---
+    hamburger.addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+            sidebar.classList.toggle('visible');
+        } else {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('full-width');
         }
-        document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
-        this.classList.add('active');
     });
-});
 
-// Live search for dashboard cards
-const searchInput = document.getElementById('dashboard-search');
-const cardWrappers = document.querySelectorAll('.dashboard-card-wrapper');
-searchInput.addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    cardWrappers.forEach(wrapper => {
-        const title = wrapper.querySelector('h5').textContent.toLowerCase();
-        const desc = wrapper.querySelector('p').textContent.toLowerCase();
-        wrapper.style.display = (title.includes(query) || desc.includes(query)) ? '' : 'none';
+    // --- Logout Confirmation ---
+    logoutBtn.addEventListener('click', function() {
+        if (confirm("Are you sure you want to log out?")) {
+            window.location.href = "{{ url_for('main.logout') }}"; // Redirect to your logout route
+        }
     });
+
+    // --- Simple Inspiration Carousel Logic ---
+    const carousel = document.querySelector('.inspiration-carousel');
+    const track = document.querySelector('.inspiration-track');
+    const cards = Array.from(document.querySelectorAll('.inspiration-card'));
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const indicators = Array.from(document.querySelectorAll('.indicator'));
+    
+    let currentSlide = 0;
+    
+    const updateCarousel = () => {
+        if (cards.length === 0) return; // Prevent errors if no cards
+        const cardWidth = cards[0].offsetWidth;
+        track.style.transform = 'translateX(-' + (cardWidth * currentSlide) + 'px)';
+        
+        indicators.forEach((indicator, index) => {
+            indicator.classList.toggle('active', index === currentSlide);
+        });
+        
+        // Hide/Show buttons based on slide position
+        prevBtn.style.display = currentSlide === 0 ? 'none' : 'block';
+        nextBtn.style.display = currentSlide === cards.length - 1 ? 'none' : 'block';
+    };
+    
+    // Initial call to set button visibility
+    updateCarousel();
+
+    // Event listeners for carousel buttons
+    nextBtn.addEventListener('click', () => {
+        if (currentSlide < cards.length - 1) {
+            currentSlide++;
+            updateCarousel();
+        }
+    });
+    
+    prevBtn.addEventListener('click', () => {
+        if (currentSlide > 0) {
+            currentSlide--;
+            updateCarousel();
+        }
+    });
+    
+    // Event listeners for indicators
+    indicators.forEach((indicator, index) => {
+        indicator.addEventListener('click', () => {
+            currentSlide = index;
+            updateCarousel();
+        });
+    });
+    
+    // Recalculate position on window resize
+    window.addEventListener('resize', updateCarousel);
 });
 </script>
-
 {% endblock %}

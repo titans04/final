@@ -1,83 +1,108 @@
 {% extends "base.html" %}
 
+{% block title %}Assigned Medical Proof Applications{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Assigned Medical Proof Applications</h2>
-    
-    <!-- Applications count info -->
-    <div class="alert alert-info d-flex align-items-center">
-        <i class="fas fa-info-circle me-2"></i>
-        <span>You have {{ applications|length }} pending application(s) to review.</span>
-    </div>
+<!-- Tailwind + FontAwesome are assumed to be loaded in base.html -->
+<div class="container mx-auto mt-10 px-4">
 
-    {% if applications %}
-    <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th><i class="fas fa-user"></i> Student</th>
-                    <th><i class="fas fa-graduation-cap"></i> Course & Year</th>
-                    <th><i class="fas fa-calendar"></i> Uploaded</th>
-                    <th><i class="fas fa-eye"></i> Status</th>
-                    <th><i class="fas fa-cogs"></i> Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for app in applications %}
-                <tr>
-                    <td>
-                        <strong>{{ app.student.name }} {{ app.student.surname }}</strong><br>
-                        <small class="text-muted">{{ app.student.student_email }}</small>
-                    </td>
-                    <td>
-                        <span class="badge bg-primary">{{ app.student.course }}</span><br>
-                        <small>Year {{ app.student.year_of_study }} - {{ app.student.faculty }}</small>
-                    </td>
-                    <td>
-                        <span class="text-primary">{{ app.uploaded_at.strftime('%d %B %Y') }}</span><br>
-                        <small class="text-muted">{{ app.uploaded_at.strftime('%H:%M') }}</small>
-                    </td>
-                    <td>
-                        {% if app.status == 'pending' %}
-                        <span class="badge bg-warning text-dark">
-                            <i class="fas fa-clock"></i> Pending Review
-                        </span>
-                        {% elif app.status == 'approved' %}
-                        <span class="badge bg-success">
-                            <i class="fas fa-check"></i> Approved
-                        </span>
-                        {% elif app.status == 'rejected' %}
-                        <span class="badge bg-danger">
-                            <i class="fas fa-times"></i> Rejected
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('main.review_medical_proof', proof_id=app.id) }}" 
-                           class="btn btn-sm btn-success">
-                            <i class="fas fa-eye"></i> Review
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    
-    {% else %}
-    <!-- No applications message -->
-    <div class="text-center py-5">
-        <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-        <h4 class="text-muted">No Applications Found</h4>
-        <p class="text-muted">You don't have any medical proof applications assigned to you at the moment.</p>
-    </div>
-    {% endif %}
+  <!-- Title -->
+  <h2 class="text-3xl font-bold mb-6 text-[#304168] flex items-center">
+    <i class="fas fa-file-medical mr-3"></i> Assigned Medical Proof Applications
+  </h2>
 
-    <!-- Back button -->
-    <div class="mt-4">
-        <a href="{{ url_for('main.staff_dashboard') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
+  <!-- Applications count alert -->
+  <div class="p-4 rounded-xl flex items-center mb-6 shadow-md bg-[#d6ecff] border-l-4 border-[#4B68A5] text-[#304168]">
+    <i class="fas fa-info-circle text-xl mr-3 text-[#4B68A5]"></i>
+    <span class="font-medium">You have {{ applications|length }} pending application(s) to review.</span>
+  </div>
+
+  {% if applications %}
+  <div class="overflow-x-auto shadow-lg rounded-lg bg-white">
+    <table class="min-w-full text-left text-sm text-gray-700">
+      <thead class="bg-[#304168] text-white">
+        <tr>
+          <th class="px-6 py-4"><i class="fas fa-user"></i> Student</th>
+          <th class="px-6 py-4"><i class="fas fa-graduation-cap"></i> Course & Year</th>
+          <th class="px-6 py-4"><i class="fas fa-calendar"></i> Uploaded</th>
+          <th class="px-6 py-4"><i class="fas fa-eye"></i> Status</th>
+          <th class="px-6 py-4"><i class="fas fa-cogs"></i> Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-6 py-4">
+            <strong>{{ app.student.name }} {{ app.student.surname }}</strong><br>
+            <small class="text-gray-500">{{ app.student.student_email }}</small>
+          </td>
+          <td class="px-6 py-4">
+            <span class="inline-block bg-[#4B68A5] text-white px-3 py-1 rounded-full text-xs font-semibold">{{ app.student.course }}</span><br>
+            <small class="text-gray-500">Year {{ app.student.year_of_study }} - {{ app.student.faculty }}</small>
+          </td>
+          <td class="px-6 py-4">
+            <span class="font-semibold text-[#4B68A5]">{{ app.uploaded_at.strftime('%d %B %Y') }}</span><br>
+            <small class="text-gray-500">{{ app.uploaded_at.strftime('%H:%M') }}</small>
+          </td>
+          <td class="px-6 py-4">
+            {% if app.status == 'pending' %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-400 text-gray-800">
+              <i class="fas fa-clock mr-1"></i> Pending Review
+            </span>
+            {% elif app.status == 'approved' %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-600 text-white">
+              <i class="fas fa-check mr-1"></i> Approved
+            </span>
+            {% elif app.status == 'rejected' %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-600 text-white">
+              <i class="fas fa-times mr-1"></i> Rejected
+            </span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4">
+            <a href="{{ url_for('main.review_medical_proof', proof_id=app.id) }}" 
+              class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-md transition">
+              <i class="fas fa-eye mr-2"></i> Review
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-16">
+    <i class="fas fa-inbox fa-4x text-gray-400 mb-4"></i>
+    <h4 class="text-gray-600 font-semibold text-xl">No Applications Found</h4>
+    <p class="text-gray-500">You don't have any medical proof applications assigned to you at the moment.</p>
+  </div>
+  {% endif %}
+
+  <!-- Back button -->
+  <div class="mt-10 text-center">
+    <a href="{{ url_for('main.staff_dashboard') }}" class="border-2 border-[#4B68A5] text-[#4B68A5] font-semibold px-6 py-3 rounded-md hover:bg-[#4B68A5] hover:text-white transition">
+      <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+    </a>
+  </div>
 </div>
+
+
+
+<!-- ✅ Script to auto-open modal -->
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const modal = document.getElementById("welcomeModal");
+    const closeBtn = document.getElementById("closeModal");
+
+    // Show modal on page load
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+
+    // Hide on click
+    closeBtn.addEventListener("click", () => {
+      modal.classList.add("hidden");
+    });
+  });
+</script>
+
 {% endblock %}

@@ -1,207 +1,686 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/staff.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Student Progress: {{ student.name }} {{ student.surname }}</h2>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Back to Student List -->
-    <a href="{{ url_for('main.manage_students') }}" class="btn btn-secondary mb-3">Back to Students</a>
+<style>
+    :root {
+        --color-blue: #4A90E2;
+        --color-deep-purple: #6C5CE7;
+        --color-light-purple: #A29BFE;
+        --color-teal: #00B894;
+        --color-green: #00D084;
+        --color-metallic-silver: #B2BEB5;
+        --color-light-grey: #f4f4f9;
+        --color-dark-grey: #4A4A4A;
+        --font-primary: 'Bebas Neue', sans-serif;
+        --font-secondary: 'Open Sans', sans-serif;
+    }
 
-    <!-- Tabs for different sections -->
-<ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('main.staff_view_student_exercises', student_id=student.id) }}">Exercises</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('main.staff_view_student_results', student_id=student.id) }}">Tests</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('main.staff_view_student_surveys', student_id=student.id) }}">Surveys</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('main.refer_student_department', student_id=student.id) }}">Referrals</a>
-    </li>
-</ul>
+    body {
+        font-family: var(--font-secondary);
+        background-color: var(--color-light-grey);
+    }
 
+    .progress-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
 
-    <div class="tab-content" id="studentProgressTabsContent">
+    .progress-container h2 {
+        font-family: var(--font-primary);
+        font-size: 2.5rem;
+        color: var(--color-blue);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 1.5rem;
+    }
 
-        <!-- Exercises Tab -->
-        <div class="tab-pane fade show active" id="exercises" role="tabpanel">
-            <h4>Exercises Completed</h4>
-            {% if exercises %}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Part</th>
-                        <th>Completed At</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ex in exercises %}
-                    <tr>
-                        <td>{{ ex.exercise.title }}</td>
-                        <td>{{ ex.exercise.part }}</td>
-                        <td>{{ ex.completed_at.strftime("%Y-%m-%d %H:%M") }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-                <p>No exercises completed yet.</p>
-            {% endif %}
-        </div>
+    .back-btn {
+        background-color: var(--color-metallic-silver);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
 
-        <!-- Tests Tab -->
-        <div class="tab-pane fade" id="tests" role="tabpanel">
-            <h4>Test Results</h4>
-            {% if tests %}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Numbers Score</th>
-                        <th>Logic Score</th>
-                        <th>Shapes Score</th>
-                        <th>Disability Likelihood</th>
-                        <th>Outcome</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for test in tests %}
-                    <tr>
-                        <td>{{ test.numbers_score }}</td>
-                        <td>{{ test.logic_score }}</td>
-                        <td>{{ test.shapes_score }}</td>
-                        <td>{{ test.disability_likelihood }}</td>
-                        <td>{{ test.outcome_message }}</td>
-                        <td>{{ test.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-                <p>No test results yet.</p>
-            {% endif %}
-        </div>
+    .back-btn:hover {
+        background-color: var(--color-dark-grey);
+        color: white;
+        transform: translateY(-2px);
+    }
 
-        <!-- Surveys Tab -->
-        <div class="tab-pane fade" id="surveys" role="tabpanel">
-            <h4>Surveys</h4>
-            {% if surveys %}
-                {% for survey in surveys %}
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            Survey taken at {{ survey.created_at.strftime("%Y-%m-%d %H:%M") }}
-                        </div>
-                        <div class="card-body">
-                            <pre>{{ survey.survey_data | tojson(indent=2) }}</pre>
-                        </div>
-                    </div>
+    /* Custom Tabs */
+    .custom-tabs {
+        display: flex;
+        gap: 0.5rem;
+        border-bottom: 2px solid var(--color-metallic-silver);
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .custom-tab {
+        padding: 0.75rem 1.5rem;
+        background: transparent;
+        border: none;
+        color: var(--color-dark-grey);
+        font-weight: 600;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+        font-family: var(--font-secondary);
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .custom-tab:hover {
+        color: var(--color-blue);
+        background-color: rgba(74, 144, 226, 0.05);
+    }
+
+    .custom-tab.active {
+        color: var(--color-blue);
+        border-bottom-color: var(--color-blue);
+        background-color: rgba(74, 144, 226, 0.05);
+    }
+
+    .tab-content-area {
+        display: none;
+    }
+
+    .tab-content-area.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-title {
+        font-family: var(--font-primary);
+        font-size: 2rem;
+        color: var(--color-deep-purple);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Table Styles */
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .custom-table thead {
+        background: var(--color-blue);
+        color: white;
+    }
+
+    .custom-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 700;
+        font-family: var(--font-primary);
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+    }
+
+    .custom-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--color-light-grey);
+        color: var(--color-dark-grey);
+    }
+
+    .custom-table tbody tr:hover {
+        background-color: rgba(74, 144, 226, 0.05);
+    }
+
+    .custom-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .custom-table a {
+        color: var(--color-teal);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .custom-table a:hover {
+        text-decoration: underline;
+    }
+
+    /* Card Styles */
+    .info-card {
+        background: var(--color-light-grey);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--color-teal);
+    }
+
+    .info-card .card-header {
+        font-weight: 700;
+        color: var(--color-deep-purple);
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .info-card pre {
+        background: white;
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-size: 0.9rem;
+        color: var(--color-dark-grey);
+    }
+
+    /* Form Styles */
+    .feedback-form {
+        background: var(--color-light-grey);
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .form-label {
+        font-weight: 700;
+        color: var(--color-dark-grey);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--color-metallic-silver);
+        border-radius: 8px;
+        font-family: var(--font-secondary);
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--color-blue);
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+
+    .submit-btn {
+        background-color: var(--color-blue);
+        color: white;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: var(--font-secondary);
+    }
+
+    .submit-btn:hover {
+        background-color: var(--color-deep-purple);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .feedback-list {
+        margin-top: 2rem;
+    }
+
+    .feedback-item {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--color-teal);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .feedback-item strong {
+        color: var(--color-deep-purple);
+        font-size: 1.1rem;
+    }
+
+    .feedback-item .timestamp {
+        color: var(--color-metallic-silver);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .feedback-content {
+        color: var(--color-dark-grey);
+        margin-top: 0.5rem;
+        line-height: 1.6;
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 3rem;
+        color: var(--color-metallic-silver);
+        font-style: italic;
+    }
+
+    .badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .badge-success {
+        background-color: var(--color-green);
+        color: white;
+    }
+
+    .badge-warning {
+        background-color: #FFC107;
+        color: var(--color-dark-grey);
+    }
+
+    .badge-danger {
+        background-color: #EF4444;
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .progress-container {
+            padding: 1rem;
+            margin: 1rem;
+        }
+
+        .progress-container h2 {
+            font-size: 1.8rem;
+        }
+
+        .custom-tabs {
+            flex-direction: column;
+        }
+
+        .custom-tab {
+            width: 100%;
+            text-align: center;
+        }
+
+        .custom-table {
+            font-size: 0.9rem;
+        }
+
+        .custom-table th,
+        .custom-table td {
+            padding: 0.5rem;
+        }
+    }
+</style>
+
+<div class="progress-container">
+    <h2>Student Progress: {{ student.name }} {{ student.surname }}</h2>
+
+    <a href="{{ url_for('main.manage_students') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Students
+    </a>
+
+    <!-- Custom Tabs -->
+    <div class="custom-tabs">
+        <a href="#" class="custom-tab active" data-tab="exercises">
+            <i class="fas fa-clipboard-list"></i> Exercises
+        </a>
+        <a href="#" class="custom-tab" data-tab="tests">
+            <i class="fas fa-flask"></i> Tests
+        </a>
+        <a href="#" class="custom-tab" data-tab="surveys">
+            <i class="fas fa-poll"></i> Surveys
+        </a>
+        <a href="#" class="custom-tab" data-tab="medical">
+            <i class="fas fa-file-medical"></i> Medical Proofs
+        </a>
+        <a href="#" class="custom-tab" data-tab="referrals">
+            <i class="fas fa-share-square"></i> Referrals
+        </a>
+        <a href="#" class="custom-tab" data-tab="feedback">
+            <i class="fas fa-comments"></i> Feedback
+        </a>
+    </div>
+
+    <!-- Exercises Tab -->
+    <div class="tab-content-area active" id="exercises">
+        <h4 class="section-title">Exercises Completed</h4>
+        {% if exercises %}
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Part</th>
+                    <th>Completed At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ex in exercises %}
+                <tr>
+                    <td>{{ ex.exercise.title }}</td>
+                    <td>{{ ex.exercise.part }}</td>
+                    <td>{{ ex.completed_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                </tr>
                 {% endfor %}
-            {% else %}
-                <p>No survey responses yet.</p>
-            {% endif %}
-        </div>
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">No exercises completed yet.</p>
+        {% endif %}
+    </div>
 
-        <!-- Medical Proofs Tab -->
-        <div class="tab-pane fade" id="medical" role="tabpanel">
-            <h4>Medical Proofs</h4>
-            {% if medical_proofs %}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>File Name</th>
-                        <th>Status</th>
-                        <th>Reviewed By</th>
-                        <th>Reviewed At</th>
-                        <th>Rejection Reason</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for proof in medical_proofs %}
-                    <tr>
-                        <td><a href="{{ url_for('static', filename='uploads/' ~ proof.file_name) }}" target="_blank">{{ proof.file_name }}</a></td>
-                        <td>{{ proof.status }}</td>
-                        <td>{{ proof.reviewed_by.name if proof.reviewed_by else '-' }}</td>
-                        <td>{{ proof.reviewed_at.strftime("%Y-%m-%d %H:%M") if proof.reviewed_at else '-' }}</td>
-                        <td>{{ proof.rejection_reason or '-' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+<div class="tab-content-area" id="tests">
+    <h4 class="section-title">Test Results</h4>
+    {% if tests %}
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Numbers Score</th>
+                <th>Logic Score</th>
+                <th>Shapes Score</th>
+                <th>Disability Likelihood</th>
+                <th>Outcome</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in tests %}
+            <tr>
+                {# 1. Numbers Score - Color based on score value (assuming higher is better) #}
+                <td>
+                    {% if test.numbers_score >= 80 %}
+                        <span class="badge badge-success">{{ test.numbers_score }}</span>
+                    {% elif test.numbers_score >= 50 %}
+                        <span class="badge badge-warning">{{ test.numbers_score }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ test.numbers_score }}</span>
+                    {% endif %}
+                </td>
+
+                {# 2. Logic Score - Color based on score value #}
+                <td>
+                    {% if test.logic_score >= 80 %}
+                        <span class="badge badge-success">{{ test.logic_score }}</span>
+                    {% elif test.logic_score >= 50 %}
+                        <span class="badge badge-warning">{{ test.logic_score }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ test.logic_score }}</span>
+                    {% endif %}
+                </td>
+
+                {# 3. Shapes Score - Color based on score value #}
+                <td>
+                    {% if test.shapes_score >= 80 %}
+                        <span class="badge badge-success">{{ test.shapes_score }}</span>
+                    {% elif test.shapes_score >= 50 %}
+                        <span class="badge badge-warning">{{ test.shapes_score }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ test.shapes_score }}</span>
+                    {% endif %}
+                </td>
+
+                {# 4. Disability Likelihood - Color based on likelihood string (assuming low, medium, high) #}
+                <td>
+                    {% if 'Low' in test.disability_likelihood %}
+                        <span class="badge badge-success">{{ test.disability_likelihood }}</span>
+                    {% elif 'Medium' in test.disability_likelihood %}
+                        <span class="badge badge-warning">{{ test.disability_likelihood }}</span>
+                    {% elif 'High' in test.disability_likelihood %}
+                        <span class="badge badge-danger">{{ test.disability_likelihood }}</span>
+                    {% else %}
+                        {{ test.disability_likelihood }}
+                    {% endif %}
+                </td>
+
+                {# 5. Outcome Message - Color based on outcome status #}
+                <td>
+                    {% if 'No further action' in test.outcome_message %}
+                        <span class="badge badge-success">{{ test.outcome_message }}</span>
+                    {% elif 'Monitor' in test.outcome_message or 'Follow-up' in test.outcome_message %}
+                        <span class="badge badge-warning">{{ test.outcome_message }}</span>
+                    {% elif 'Referral' in test.outcome_message %}
+                        <span class="badge badge-danger">{{ test.outcome_message }}</span>
+                    {% else %}
+                        {{ test.outcome_message }}
+                    {% endif %}
+                </td>
+                
+                <td>{{ test.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="no-data">No test results yet.</p>
+    {% endif %}
+</div>
+
+    <!-- Surveys Tab -->
+    <div class="tab-content-area" id="surveys">
+      <h4 class="section-title"><i class="fas fa-chart-line"></i> Survey Analysis</h4>
+
+      {% if surveys %}
+        {% for survey in surveys %}
+          {% set data = survey.readable_data %}
+          {% set struggles = [] %}
+
+          <div class="info-card">
+            <div class="card-header">
+              📅 Survey taken on {{ survey.created_at.strftime("%Y-%m-%d %H:%M") }}
+            </div>
+
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Score</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for key, value in data.items() %}
+                  {% if value >= 4 %}
+                    {% set status = "🚨 Struggle" %}
+                    {% set css = "badge-danger" %}
+                    {% set _ = struggles.append(key) %}
+                  {% elif value == 3 %}
+                    {% set status = "⚠️ Moderate" %}
+                    {% set css = "badge-warning" %}
+                  {% else %}
+                    {% set status = "✅ No Struggle" %}
+                    {% set css = "badge-success" %}
+                  {% endif %}
+                  <tr>
+                    <td>{{ key.replace('_', ' ') | title }}</td>
+                    <td>{{ value }}</td>
+                    <td><span class="badge {{ css }}">{{ status }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
             </table>
-            {% else %}
-                <p>No medical proofs uploaded yet.</p>
-            {% endif %}
-        </div>
 
-        <!-- Referrals Tab -->
-        <div class="tab-pane fade" id="referrals" role="tabpanel">
-            <h4>Referrals</h4>
-            {% if referrals %}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Department</th>
-                        <th>Referred By</th>
-                        <th>Status</th>
-                        <th>Reason</th>
-                        <th>Created At</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ref in referrals %}
-                    <tr>
-                        <td>{{ ref.department or '-' }}</td>
-                        <td>{{ ref.referred_by.name }} {{ ref.referred_by.surname }}</td>
-                        <td>{{ ref.status }}</td>
-                        <td>{{ ref.reason or '-' }}</td>
-                        <td>{{ ref.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            {% if struggles %}
+              <div style="margin-top: 1.5rem; padding: 1rem; background: #ffecec; border-left: 4px solid #e74c3c; border-radius: 8px;">
+                <h6 style="color: #e74c3c; font-weight: 700;">
+                  ⚠️ Areas of Concern
+                </h6>
+                <ul style="margin: 0; padding-left: 1.2rem;">
+                  {% for s in struggles %}
+                    <li>{{ s.replace('_', ' ') | title }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
             {% else %}
-                <p>No referrals yet.</p>
+              <div style="margin-top: 1.5rem; padding: 1rem; background: #e7f8ee; border-left: 4px solid var(--color-green); border-radius: 8px;">
+                <strong style="color: var(--color-green);">✅ This student shows no major struggles in this survey.</strong>
+              </div>
             {% endif %}
-        </div>
 
-        <!-- Feedback Tab -->
-        <div class="tab-pane fade" id="feedback" role="tabpanel">
-            <h4>Give Feedback</h4>
+            <details style="margin-top: 1rem;">
+              <summary style="cursor: pointer; color: var(--color-blue); font-weight: 600;">
+                📊 View Raw Survey Data
+              </summary>
+              <pre style="background: #f4f4f4; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">
+{{ survey.survey_data | tojson(indent=2) }}
+              </pre>
+            </details>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="no-data">No survey responses yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Medical, Referrals, Feedback tabs remain unchanged -->
+
+    <div class="tab-content-area" id="medical">
+        <h4 class="section-title">Medical Proofs</h4>
+        {% if medical_proofs %}
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Status</th>
+                    <th>Reviewed By</th>
+                    <th>Reviewed At</th>
+                    <th>Rejection Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proof in medical_proofs %}
+                <tr>
+                    <td><a href="{{ url_for('static', filename='uploads/' ~ proof.file_name) }}" target="_blank">{{ proof.file_name }}</a></td>
+                    <td>
+                        {% if proof.status == 'approved' %}
+                        <span class="badge badge-success">{{ proof.status }}</span>
+                        {% elif proof.status == 'rejected' %}
+                        <span class="badge badge-danger">{{ proof.status }}</span>
+                        {% else %}
+                        <span class="badge badge-warning">{{ proof.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ proof.reviewed_by.name if proof.reviewed_by else '-' }}</td>
+                    <td>{{ proof.reviewed_at.strftime("%Y-%m-%d %H:%M") if proof.reviewed_at else '-' }}</td>
+                    <td>{{ proof.rejection_reason or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">No medical proofs uploaded yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-content-area" id="referrals">
+        <h4 class="section-title">Referrals</h4>
+        {% if referrals %}
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Referred By</th>
+                    <th>Status</th>
+                    <th>Reason</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ref in referrals %}
+                <tr>
+                    <td>{{ ref.department or '-' }}</td>
+                    <td>{{ ref.referred_by.name }} {{ ref.referred_by.surname }}</td>
+                    <td>
+                        {% if ref.status == 'completed' %}
+                        <span class="badge badge-success">{{ ref.status }}</span>
+                        {% elif ref.status == 'pending' %}
+                        <span class="badge badge-warning">{{ ref.status }}</span>
+                        {% else %}
+                        <span class="badge badge-danger">{{ ref.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ ref.reason or '-' }}</td>
+                    <td>{{ ref.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">No referrals yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-content-area" id="feedback">
+        <h4 class="section-title">Give Feedback</h4>
+        <div class="feedback-form">
             <form action="{{ url_for('main.staff_feedback', student_id=student.id) }}" method="POST">
                 <div class="mb-3">
                     <label for="feedback_content" class="form-label">Feedback</label>
                     <textarea class="form-control" id="feedback_content" name="feedback_content" rows="5" required></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-paper-plane"></i> Submit Feedback
+                </button>
             </form>
-
-            <hr>
-
-            <h5>Previous Feedback</h5>
-            {% if student.feedbacks %}
-                <ul class="list-group">
-                    {% for fb in student.feedbacks %}
-                        <li class="list-group-item">
-                            <strong>{{ fb.staff.name }} {{ fb.staff.surname }}</strong> ({{ fb.created_at.strftime("%Y-%m-%d %H:%M") }}):
-                            <br>{{ fb.content }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No feedback yet.</p>
-            {% endif %}
         </div>
 
+        <h5 class="section-title" style="font-size: 1.5rem;">Previous Feedback</h5>
+        <div class="feedback-list">
+            {% if student.feedbacks %}
+                {% for fb in student.feedbacks %}
+                <div class="feedback-item">
+                    <strong>{{ fb.staff.name }} {{ fb.staff.surname }}</strong>
+                    <div class="timestamp">{{ fb.created_at.strftime("%Y-%m-%d %H:%M") }}</div>
+                    <div class="feedback-content">{{ fb.content }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <p class="no-data">No feedback yet.</p>
+            {% endif %}
+        </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
- 
-    const firstTabEl = document.querySelector('#studentProgressTabs a.nav-link');
-    const tab = new bootstrap.Tab(firstTabEl);
-    tab.show();
+    // Custom Tab Switching
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.custom-tab');
+        const tabContents = document.querySelectorAll('.tab-content-area');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all tabs and contents
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                // Add active class to clicked tab
+                this.classList.add('active');
+
+                // Show corresponding content
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+    });
 </script>
 {% endblock %}
